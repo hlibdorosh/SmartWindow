@@ -6,6 +6,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -14,7 +16,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 
 @Composable
-fun PlantListScreen() {
+fun PlantListScreen(
+    mainViewModel: MainViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+) {
+
+    val temp by mainViewModel.temp.collectAsState()
+    val humidity by mainViewModel.humidity.collectAsState()
+    val light by mainViewModel.light.collectAsState()
+
     val myPlants = listOf(
         "Фикус на подоконнике",
         "Кактус у монитора",
@@ -54,7 +63,7 @@ fun PlantListScreen() {
                 //.padding(16.dp)
                 .fillMaxSize()
         ) {
-            Header()
+            Header(temp, humidity, light)
             //Spacer(modifier = Modifier.height(16.dp))
             PlantList(plants = myPlants, onPlantClick = { /* TODO: Handle plant click */ })
         }
@@ -63,7 +72,7 @@ fun PlantListScreen() {
 
 
 @Composable
-fun Header(){
+fun Header(temp: String, humidity: String, light: String, raw: String = "") {
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -83,19 +92,19 @@ fun Header(){
             ) {
                 StatusSensorCard(
                     label = "Темп.",
-                    value = "24°C",
+                    value = temp,
                     icon = "🌡️",
                     modifier = Modifier.weight(1f)
                 )
                 StatusSensorCard(
                     label = "Влажн.",
-                    value = "45%",
+                    value = humidity,
                     icon = "💧",
                     modifier = Modifier.weight(1f)
                 )
                 StatusSensorCard(
                     label = "Свет",
-                    value = "80%",
+                    value = light,
                     icon = "☀️",
                     modifier = Modifier.weight(1f)
                 )
@@ -109,6 +118,11 @@ fun Header(){
                 modifier = Modifier.fillMaxWidth()
             )
         }
+            // Отладочный вывод: последний полученный сырой буфер (короткая версия)
+            if (raw.isNotBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = "RAW: ${raw.replace("\n", " ").take(200)}", fontSize = 12.sp)
+            }
     }
 }
 
@@ -130,6 +144,7 @@ fun StatusSensorCard(label: String, value: String, icon: String, modifier: Modif
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .height(76.dp) // Фиксированная высота для всех карточек
             .padding(4.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -137,16 +152,27 @@ fun StatusSensorCard(label: String, value: String, icon: String, modifier: Modif
         )
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(text = icon, fontSize = 16.sp)
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(6.dp))
 
-            Column {
-                Text(text = label, fontSize = 14.sp)
-                Text(text = value, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Column(verticalArrangement = Arrangement.Center) {
+                Text(
+                    text = label,
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+                Text(
+                    text = value,
+                    fontSize = 15.sp, // Чуть меньший шрифт
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
             }
         }
     }

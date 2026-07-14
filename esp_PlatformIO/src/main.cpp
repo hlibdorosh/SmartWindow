@@ -1,4 +1,4 @@
-﻿#include <Arduino.h>
+#include <Arduino.h>
 #include <DHT.h>
 #include <BLEDevice.h>
 #include <BLEServer.h>
@@ -40,10 +40,7 @@ void sendSensorData() {
   float temperature = dht.readTemperature();
   float light = analogRead(LIGHT_PIN);
 
-  String payload = "Humidity: " + String(humidity, 2) + "%\n";
-  payload += "Temperature: " + String(temperature, 2) + "°C\n";
-  payload += "Light: " + String(light, 2) + "\n";
-  payload += "Device UUID: " + deviceUuid + "\n";
+  String payload = String(temperature, 1) + "," + String(humidity, 1) + "," + String(light, 0);
 
   pCharacteristic->setValue(payload.c_str());
   pCharacteristic->notify();
@@ -91,10 +88,7 @@ void loop() {
   Serial.printf("Light: %.2f\n", light);
 
   if (deviceConnected && pCharacteristic != nullptr) {
-    String payload = "Humidity: " + String(humidity, 2) + "%\n";
-    payload += "Temperature: " + String(temperature, 2) + "°C\n";
-    payload += "Light: " + String(light, 2) + "\n";
-    payload += "Device UUID: " + deviceUuid + "\n";
+    String payload = String(temperature, 1) + "," + String(humidity, 1) + "," + String(light, 0);
 
     pCharacteristic->setValue(payload.c_str());
     pCharacteristic->notify();

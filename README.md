@@ -1,54 +1,54 @@
-# Smart Windowsill (Умный подоконник) 🌱
+# Smart Windowsill 🌱
 
-Интеллектуальная система мониторинга микроклимата растений на базе **ESP32**, мобильного приложения на **Android (Jetpack Compose)** с искусственным интеллектом **Claude** для анализа условий ухода, и backend-сервиса **plant-api**.
+An intelligent plant microclimate monitoring system powered by an **ESP32** hardware station, a modern **Android (Jetpack Compose)** app with **Claude AI** for automated plant care and species identification, and a **Node.js / Express** backend API.
 
 ---
 
-## 📸 Устройство и схема подключения
+## 📸 Device & Wiring Diagram
 
-### Фото аппаратной части
+### Hardware Setup
 ![ESP32 Device](esp.png)
 
-### Электрическая схема
+### Circuit Schematic
 ![Circuit Diagram](circut.png)
 
 ---
 
-## 🛠 Архитектура проекта
+## 🛠 Project Architecture
 
-Проект состоит из трех основных компонентов:
+The repository is structured into three main modules:
 
 ```
 SmartWindow/
-├── esp_PlatformIO/                 # Прошивка ESP32 (PlatformIO / C++)
-├── SmartWindowsill_AndroidStudio/  # Android-приложение (Kotlin, Jetpack Compose, Room)
-├── plant-api/                      # REST API для базы знаний растений (Node.js, Express, MongoDB)
-├── circuit.png                     # Схема подключения компонентов
-├── circut.png                      # Ссылка на схему
-├── esp.png                         # Фотография собранного устройства
-└── README.md                       # Документация проекта
+├── esp_PlatformIO/                 # ESP32 firmware (PlatformIO / C++)
+├── SmartWindowsill_AndroidStudio/  # Android mobile app (Kotlin, Jetpack Compose, Room)
+├── plant-api/                      # REST API for plant database (Node.js, Express, MongoDB)
+├── circuit.png                     # Circuit schematic diagram
+├── circut.png                      # Reference link to schematic
+├── esp.png                         # Assembled hardware device photo
+└── README.md                       # Project documentation
 ```
 
 ---
 
-## 🔌 1. Аппаратная часть (`esp_PlatformIO`)
+## 🔌 1. Hardware Station (`esp_PlatformIO`)
 
-Микроконтроллер **ESP32 DevKit** собирает показания сенсоров и передает телеметрию по **Bluetooth Low Energy (BLE)** подключенному смартфону.
+The **ESP32 DevKit** board samples ambient environmental sensors and transmits real-time telemetry over **Bluetooth Low Energy (BLE)** to the connected Android smartphone.
 
-### Подключенные датчики и пины:
-| Датчик | Параметр | Пин ESP32 | Примечание |
+### Connected Sensors & Pinout:
+| Sensor | Measured Parameter | ESP32 Pin | Details |
 |---|---|---|---|
-| **DHT22** (AM2302) | Температура (°C), Влажность воздуха (%) | `GPIO 23` | Цифровой датчик |
-| **Фоторезистор** | Освещенность (Lux / ADC) | `GPIO 34` | Аналоговый вход (ADC1) |
+| **DHT22** (AM2302) | Temperature (°C), Relative Humidity (%) | `GPIO 23` | Digital temperature/humidity sensor |
+| **Photoresistor (LDR)** | Ambient Light (Lux / ADC) | `GPIO 34` | Analog input (ADC1) with voltage divider |
 
-### BLE-сервис:
-- **Имя устройства**: `ESP32_SENSOR`
+### BLE Service:
+- **Device Name**: `ESP32_SENSOR`
 - **Service UUID**: `4fafc201-1fb5-459e-8fcc-c5c9c5c9c5c9`
 - **Characteristic UUID**: `beb5483e-36e1-4688-b7f5-e0b3c3f4e4c5` (Notify)
-- **Формат пакета**: `temperature,humidity,light` (строка через запятую)
+- **Payload Format**: `temperature,humidity,light` (comma-separated string)
 
-### Сборка и прошивка:
-Используется [PlatformIO](https://platformio.org/):
+### Flashing Firmware:
+Built using [PlatformIO](https://platformio.org/):
 ```bash
 cd esp_PlatformIO
 pio run --target upload
@@ -56,26 +56,27 @@ pio run --target upload
 
 ---
 
-## 📱 2. Мобильное приложение (`SmartWindowsill_AndroidStudio`)
+## 📱 2. Android Mobile Application (`SmartWindowsill_AndroidStudio`)
 
-Современное Android-приложение, созданное на **Jetpack Compose** и архитектуре MVVM + Clean Architecture.
+A native Android app built with **Jetpack Compose**, Room Database, and MVVM architecture.
 
-### Основные возможности:
-- 📡 **BLE-синхронизация в реальном времени**: автоматическое подключение к ESP32, прием телеметрии и сохранение истории в локальную БД.
-- 📷 **Добавление растений по фото**: возможность сделать снимок с камеры или выбрать изображение из галереи.
-- 🤖 **Интеграция с Claude AI (`claude-haiku-5-5`)**: распознавание вида растения, определение научного латинского наименования (*Scientific Name*, например, *Monstera deliciosa*) и подбор оптимального микроклимата (диапазоны температуры, влажности и света).
-- 📈 **Индекс комфорта (Plant Comfort Index)**: расчет отклонения текущих условий от идеального профиля ($0–100\%$) с возможностью отключения отдельных метрик и детальной диагностикой отклонений.
-- 📊 **Графики истории комфорта**: биржевой/рыночный тайм-серии график с визуализацией дневных колебаний и трендов.
-- 💾 **Room Database**: хранение списка растений, истории телеметрии и суточных агрегированных данных с поддержкой миграций схем.
+### Key Features:
+- 📡 **Real-time BLE Sync**: Auto-connects to the ESP32 station, streaming live telemetry and logging data locally.
+- 📈 **Dynamic 60-Minute Real-Time Chart**: Live telemetry chart on the main screen tracking sensor fluctuations over the last 60 minutes with one-tap switching between Temperature, Humidity, and Light.
+- 📷 **Photo Capture & Plant Management**: Take pictures directly with the built-in camera or select images from the device gallery.
+- 🤖 **Claude AI Integration (`claude-haiku-5-5`)**: Automatically identifies the plant species, extracts its formal botanical Latin binomial (*Scientific Name*, e.g. *Monstera deliciosa*), and determines ideal windowsill growing conditions (temperature, humidity, light ranges).
+- 📊 **Plant Comfort Index ($0–100\%$)**: Calculates how closely ambient conditions match each plant's ideal profile, featuring interactive metric toggles (chips) and diagnostic breakdown of factors dragging down comfort.
+- 🕯️ **Market-Style Historical Charting**: Multi-day candlestick/area time-series charts visualizing diurnal swings and historical comfort trends.
+- 💾 **Safe Room SQLite Database**: Preserves telemetry, plant cards, and daily aggregates across app updates via structured Room migrations.
 
-### Настройка API-ключа:
-Создайте файл `SmartWindowsill_AndroidStudio/local.properties` (он уже добавлен в `.gitignore` и защищен от попадания в репозиторий):
+### API Key Configuration:
+Create or edit `SmartWindowsill_AndroidStudio/local.properties` (ignored by Git):
 ```properties
 sdk.dir=/path/to/android/sdk
 anthropic.apiKey=sk-ant-api03-...
 ```
 
-### Сборка APK:
+### Build APK:
 ```bash
 cd SmartWindowsill_AndroidStudio
 ./gradlew assembleDebug
@@ -85,21 +86,21 @@ cd SmartWindowsill_AndroidStudio
 
 ## 🌐 3. Backend API (`plant-api`)
 
-Сервис на Node.js / Express для управления каталогом растений с хранилищем в MongoDB.
+A lightweight REST service built with Node.js and Express to query and manage the plant catalog backed by MongoDB.
 
 ```bash
 cd plant-api
 npm install
-npm run seed   # Заполнение базы начальными данными
-npm start      # Запуск сервера
+npm run seed   # Seed the database with starter plant profiles
+npm start      # Start the API server
 ```
 
 ---
 
-## 🔒 Безопасность и Git
+## 🔒 Security & Git Setup
 
-В корневом `.gitignore` настроено исключение всех чувствительных и локальных файлов:
-- `local.properties` с API-ключами Anthropic.
-- Временные файлы сборки Android (`build/`, `.gradle/`, `.cxx/`).
-- Артефакты сборки PlatformIO (`.pio/`).
-- Зависимости Node.js (`node_modules/`).
+The root `.gitignore` protects sensitive keys and prevents committing build artifacts:
+- `local.properties` containing Anthropic API keys.
+- Android/Gradle build directories (`build/`, `.gradle/`, `.cxx/`, `*.apk`).
+- PlatformIO artifacts (`.pio/`).
+- Node.js dependencies (`node_modules/`).

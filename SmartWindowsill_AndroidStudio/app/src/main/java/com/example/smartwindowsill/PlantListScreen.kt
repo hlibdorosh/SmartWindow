@@ -33,6 +33,9 @@ fun PlantListScreen(
     val temp by mainViewModel.temp.collectAsState()
     val humidity by mainViewModel.humidity.collectAsState()
     val light by mainViewModel.light.collectAsState()
+    val history60Min by mainViewModel.history60Min.collectAsState()
+
+    var selectedMetric by remember { mutableStateOf(SensorChartMetric.TEMPERATURE) }
 
     val plants by plantsViewModel.plants.collectAsState()
 
@@ -56,7 +59,14 @@ fun PlantListScreen(
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
-            Header(temp, humidity, light)
+            Header(
+                temp = temp,
+                humidity = humidity,
+                light = light,
+                history60Min = history60Min,
+                selectedMetric = selectedMetric,
+                onSelectMetric = { selectedMetric = it }
+            )
             PlantList(plants = plants, onPlantClick = { selectedPlantId = it.id })
         }
     } // Конец Scaffold
@@ -79,57 +89,143 @@ fun PlantListScreen(
 
 
 @Composable
-fun Header(temp: String, humidity: String, light: String, raw: String = "") {
+fun Header(
+    temp: String,
+    humidity: String,
+    light: String,
+    history60Min: List<SensorHistory>,
+    selectedMetric: SensorChartMetric,
+    onSelectMetric: (SensorChartMetric) -> Unit,
+    raw: String = ""
+) {
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shadowElevation = 18.dp, // Высота тени (чем больше dp, тем мягче и заметнее тень)
-        color = MaterialTheme.colorScheme.surfaceContainer, // Цвет фона, можно использовать цвет из темы
+        shadowElevation = 8.dp,
+        color = MaterialTheme.colorScheme.surfaceContainer,
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(16.dp),) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
             Text(
-                text = "GSmart Windowsill",
+                text = "Smart Windowsill",
                 style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 16.dp) // Правильный отступ без багов
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            Row(
+            // Значения сенсоров идут друг за другом.
+            // Клик по любому сенсору переключает график внизу на этот параметр!
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                StatusSensorCard(
-                    label = "Темп.",
+                StatusSensorRow(
+                    label = "Температура",
                     value = temp,
                     icon = "🌡️",
-                    modifier = Modifier.weight(1f)
+                    isSelected = selectedMetric == SensorChartMetric.TEMPERATURE,
+                    onClick = { onSelectMetric(SensorChartMetric.TEMPERATURE) }
                 )
-                StatusSensorCard(
-                    label = "Влажн.",
+                StatusSensorRow(
+                    label = "Влажность воздуха",
                     value = humidity,
                     icon = "💧",
-                    modifier = Modifier.weight(1f)
+                    isSelected = selectedMetric == SensorChartMetric.HUMIDITY,
+                    onClick = { onSelectMetric(SensorChartMetric.HUMIDITY) }
                 )
-                StatusSensorCard(
-                    label = "Свет",
+                StatusSensorRow(
+                    label = "Освещенность",
                     value = light,
                     icon = "☀️",
-                    modifier = Modifier.weight(1f)
+                    isSelected = selectedMetric == SensorChartMetric.LIGHT,
+                    onClick = { onSelectMetric(SensorChartMetric.LIGHT) }
                 )
             }
-            Spacer(modifier = Modifier.height(16.dp))
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Простой динамический график за последние 60 минут
+            SensorHistoryChart(
+                history = history60Min,
+                metric = selectedMetric
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
                 value = "",
                 onValueChange = {},
-                label = { Text("Search") },
+                label = { Text("Поиск") },
                 modifier = Modifier.fillMaxWidth()
             )
-        }
+
             // Отладочный вывод: последний полученный сырой буфер (короткая версия)
             if (raw.isNotBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(text = "RAW: ${raw.replace("\n", " ").take(200)}", fontSize = 12.sp)
             }
+        }
+    }
+}
+
+@Composable
+fun StatusSensorRow(
+    label: String,
+    value: String,
+    icon: String,
+    isSelected: Boolean = false,
+    onClick: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected)
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+            else
+                MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(text = icon, fontSize = 20.sp)
+                Text(
+                    text = label,
+                    fontSize = 15.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = value,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                if (isSelected) {
+                    Text("📈", fontSize = 14.sp)
+                }
+            }
+        }
     }
 }
 
@@ -146,53 +242,20 @@ fun PlantList(plants: List<Plant>, onPlantClick: (Plant) -> Unit){
         }
     }
 }
+
 @Composable
-fun StatusSensorCard(label: String, value: String, icon: String, modifier: Modifier = Modifier) {
+fun PlantCard(plant: Plant, onClick: () -> Unit) {
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(76.dp) // Фиксированная высота для всех карточек
-            .padding(4.dp),
+        modifier = Modifier.fillMaxWidth().clickable{ onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
         Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(text = icon, fontSize = 16.sp)
-
-            Spacer(modifier = Modifier.width(6.dp))
-
-            Column(verticalArrangement = Arrangement.Center) {
-                Text(
-                    text = label,
-                    fontSize = 12.sp,
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                )
-                Text(
-                    text = value,
-                    fontSize = 15.sp, // Чуть меньший шрифт
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                )
-            }
-        }
-    }
-}
-@Composable
-fun PlantCard(plant: Plant, onClick: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth().clickable{ onClick()}, shape = RoundedCornerShape(16.dp ), colors = CardDefaults.cardColors(
-containerColor = MaterialTheme.colorScheme.surfaceVariant
-    )) {
-        Row(
             modifier = Modifier.padding(16.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
-        ){
+        ) {
             val photo = remember(plant.imageUri) {
                 plant.imageUri?.let { BitmapFactory.decodeFile(it)?.asImageBitmap() }
             }
@@ -209,11 +272,11 @@ containerColor = MaterialTheme.colorScheme.surfaceVariant
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            Column{
+            Column {
                 Text(
-                text = plant.nickname.ifBlank { plant.name },
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+                    text = plant.nickname.ifBlank { plant.name },
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
                 )
                 if (plant.nickname.isNotBlank()) {
                     Text(
@@ -224,18 +287,12 @@ containerColor = MaterialTheme.colorScheme.surfaceVariant
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                        text = "Статус: Подключено",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-
+                    text = "Статус: Подключено",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
             }
-
-
         }
-
-
-
     }
 }
 

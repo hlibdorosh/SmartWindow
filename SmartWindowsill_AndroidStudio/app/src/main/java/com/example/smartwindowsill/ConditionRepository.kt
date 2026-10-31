@@ -25,12 +25,10 @@ class ConditionRepository(private val db: AppDatabase) {
         temperature: Float,
         humidity: Float,
         light: Float,
-        soilMoisture: Float? = null,
         now: Long = System.currentTimeMillis()
     ) {
         // DHT возвращает NaN при сбое чтения — такие замеры не сохраняем
         if (!temperature.isFinite() || !humidity.isFinite() || !light.isFinite()) return
-        val soil = soilMoisture?.takeIf { it.isFinite() }
 
         val sensorDao = db.sensorHistoryDao()
         val dailyDao = db.dailyConditionDao()
@@ -41,8 +39,7 @@ class ConditionRepository(private val db: AppDatabase) {
                     timestamp = now,
                     temperature = temperature,
                     humidity = humidity,
-                    light = light,
-                    soilMoisture = soil
+                    light = light
                 )
             )
             val start = dayStartMillis(now)

@@ -9,6 +9,5 @@ data class SensorHistory(
     val timestamp: Long,    // Время замера (мс с эпохи)
     val temperature: Float,
     val humidity: Float,
-    val light: Float,       // lx
-    val soilMoisture: Float? = null // %, null пока нет датчика почвы
+    val light: Float        // lx
 )

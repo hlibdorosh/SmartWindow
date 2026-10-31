@@ -27,11 +27,6 @@ data class Plant(
     val optLight: Float,
     val maxLight: Float,
 
-    // Параметры влажности почвы (%), null — нет данных (датчика почвы пока нет)
-    val minSoil: Float? = null,
-    val optSoil: Float? = null,
-    val maxSoil: Float? = null,
-
     // Когда растение добавлено (мс с эпохи)
     @ColumnInfo(defaultValue = "0") val addedAt: Long = System.currentTimeMillis(),
     // Когда последний раз поливали (мс с эпохи), null — ещё не поливали

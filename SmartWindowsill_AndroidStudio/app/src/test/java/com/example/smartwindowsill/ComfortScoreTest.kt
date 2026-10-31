@@ -56,16 +56,6 @@ class ComfortScoreTest {
 
     @Test fun noActiveUsableMetricsGivesNull() {
         assertNull(computeComfort(day(22f, 60f, 5000f), plant, emptySet()))
-        // Почва выбрана, но у растения нет порогов и нет данных
-        assertNull(computeComfort(day(22f, 60f, 5000f), plant, setOf(Metric.SOIL)))
-    }
-
-    @Test fun soilIsUsedWhenAvailable() {
-        val soilPlant = plant.copy(minSoil = 20f, optSoil = 50f, maxSoil = 70f)
-        val d = day(22f, 60f, 5000f).copy(soilMean = 50f, soilMin = 50f, soilMax = 50f)
-        val p = computeComfort(d, soilPlant, Metric.entries.toSet())
-        assertNotNull(p)
-        assertEquals(4, p!!.parts.size)
     }
 
     @Test fun dailySwingWidensLowHighBand() {

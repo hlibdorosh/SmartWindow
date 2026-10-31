@@ -18,9 +18,7 @@ data class DailyCondition(
     val sampleCount: Int,
     val tempMean: Float, val tempMin: Float, val tempMax: Float,             // °C
     val humidityMean: Float, val humidityMin: Float, val humidityMax: Float, // %
-    val lightMean: Float, val lightMin: Float, val lightMax: Float,          // lx
-    // Влажность почвы (%): датчика пока нет, поэтому может быть null
-    val soilMean: Float? = null, val soilMin: Float? = null, val soilMax: Float? = null
+    val lightMean: Float, val lightMin: Float, val lightMax: Float           // lx
 )
 
 // Результат агрегации сырых замеров за сутки (null, если замеров не было)
@@ -28,8 +26,7 @@ data class DayAggregate(
     val sampleCount: Int,
     val tempMean: Float?, val tempMin: Float?, val tempMax: Float?,
     val humidityMean: Float?, val humidityMin: Float?, val humidityMax: Float?,
-    val lightMean: Float?, val lightMin: Float?, val lightMax: Float?,
-    val soilMean: Float?, val soilMin: Float?, val soilMax: Float?
+    val lightMean: Float?, val lightMin: Float?, val lightMax: Float?
 ) {
     fun toEntity(day: Long): DailyCondition? {
         if (sampleCount <= 0) return null
@@ -39,8 +36,7 @@ data class DayAggregate(
             tempMean = tempMean ?: return null, tempMin = tempMin ?: return null, tempMax = tempMax ?: return null,
             humidityMean = humidityMean ?: return null, humidityMin = humidityMin ?: return null,
             humidityMax = humidityMax ?: return null,
-            lightMean = lightMean ?: return null, lightMin = lightMin ?: return null, lightMax = lightMax ?: return null,
-            soilMean = soilMean, soilMin = soilMin, soilMax = soilMax
+            lightMean = lightMean ?: return null, lightMin = lightMin ?: return null, lightMax = lightMax ?: return null
         )
     }
 }

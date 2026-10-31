@@ -4,13 +4,15 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
-    // Инициализируем наш ультра-менеджер
+    // Инициализируем менеджер Bluetooth
     private val bluetoothManager = BluetoothManager(application.applicationContext)
 
     // Переменные для экрана (UI будет наблюдать за ними)
@@ -23,19 +25,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _light = MutableStateFlow("--")
     val light: StateFlow<String> = _light
 
-    // Отладочное поле: последний полученный сырый буфер/сообщение
+    // Отладочное поле: последний полученный сырой буфер/сообщение
     private val _raw = MutableStateFlow("")
     val raw: StateFlow<String> = _raw
 
-    private val conditionRepository = ConditionRepository((application as App).database)
+    private val db = (application as App).database
+    private val conditionRepository = ConditionRepository(db)
     private var lastRecordedAt = 0L
-    private val RECORD_INTERVAL_MS = 60_000L
+    private val RECORD_INTERVAL_MS = 15_000L // Запись каждые 15 сек для динамичного и плавного графика
+
+    // История за последние 60 минут (хронологически по возрастанию времени)
+    val history60Min: StateFlow<List<SensorHistory>> = db
+        .sensorHistoryDao()
+        .getRecentHistory(500)
+        .map { list ->
+            val cutoff = System.currentTimeMillis() - 60 * 60 * 1000L
+            list.filter { it.timestamp >= cutoff }.reversed()
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     init {
         // Начинаем слушать входящий сырой текст в фоновом режиме
         viewModelScope.launch {
             bluetoothManager.rawSensorData.collect { rawText ->
-                // Сохраняем для отладки и парсим
                 _raw.value = rawText
                 parseData(rawText)
             }
@@ -47,7 +59,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         bluetoothManager.connect()
     }
 
-    // Сохраняем не чаще раза в минуту: датчик шлёт данные каждые 5 с, для дневных агрегатов этого достаточно
     private fun recordSample(temperature: Float, humidity: Float, lux: Float) {
         val now = System.currentTimeMillis()
         if (now - lastRecordedAt < RECORD_INTERVAL_MS) return
@@ -91,28 +102,31 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val humRegex = Regex("Humidity\\D*([0-9]+(?:\\.[0-9]+)?)", RegexOption.IGNORE_CASE)
             val lightRegex = Regex("Light\\D*([0-9]+(?:\\.[0-9]+)?)", RegexOption.IGNORE_CASE)
 
+            var parsedT: Float? = null
+            var parsedH: Float? = null
+
             tempRegex.find(trimmed)?.groups?.get(1)?.value?.let { number ->
                 _temp.value = "$number°C"
+                parsedT = number.toFloatOrNull()
             }
 
             humRegex.find(trimmed)?.groups?.get(1)?.value?.let { number ->
                 _humidity.value = "$number%"
+                parsedH = number.toFloatOrNull()
             }
 
             lightRegex.find(trimmed)?.groups?.get(1)?.value?.let { number ->
                 val rawLight = number.toFloatOrNull() ?: 0f
-                // Ограничиваем значение, чтобы избежать деления на 0
                 val adc = rawLight.coerceIn(1f, 4094f)
-                
-                // Фоторезистор подключен к 3.3В, а подтягивающий резистор 10 кОм — к земле
-                // (так как ADC 4095 = максимум света).
-                // Считаем сопротивление фоторезистора (RLDR) в Омах:
                 val rLdr = 10000f * (4095f - adc) / adc
-                
-                // Приближенный расчет Люкс (Lux) для типичного фоторезистора:
                 val lux = 500000f / rLdr
                 
                 _light.value = "${lux.toInt()} lx"
+                val t = parsedT
+                val h = parsedH
+                if (t != null && h != null) {
+                    recordSample(t, h, lux)
+                }
             }
 
         } catch (_: Exception) {
@@ -122,6 +136,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     override fun onCleared() {
         super.onCleared()
-        bluetoothManager.disconnect() // Всегда отключаемся при закрытии приложения
+        bluetoothManager.disconnect()
     }
 }

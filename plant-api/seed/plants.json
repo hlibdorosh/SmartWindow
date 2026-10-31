@@ -1,0 +1,132 @@
+[
+  {
+    "plantName": "Monstera",
+    "description": "Large tropical plant with split leaves. Likes bright indirect light and humid air.",
+    "imageUrl": null,
+    "temp": { "min": 15, "perfect": 22, "max": 30 },
+    "humidity": { "min": 50, "perfect": 60, "max": 80 },
+    "light": { "min": 40, "perfect": 70, "max": 90 },
+    "wateringIntervalDays": 7,
+    "wateringNotes": "Let the top 2-3 cm of soil dry out between waterings."
+  },
+  {
+    "plantName": "Pothos",
+    "description": "Easy trailing vine that tolerates low light and irregular care.",
+    "imageUrl": null,
+    "temp": { "min": 15, "perfect": 21, "max": 30 },
+    "humidity": { "min": 40, "perfect": 50, "max": 70 },
+    "light": { "min": 30, "perfect": 60, "max": 85 },
+    "wateringIntervalDays": 7,
+    "wateringNotes": "Water when the soil is dry to the first knuckle."
+  },
+  {
+    "plantName": "Snake Plant",
+    "description": "Hardy succulent with upright striped leaves. Very drought tolerant.",
+    "imageUrl": null,
+    "temp": { "min": 10, "perfect": 20, "max": 32 },
+    "humidity": { "min": 20, "perfect": 40, "max": 60 },
+    "light": { "min": 20, "perfect": 50, "max": 80 },
+    "wateringIntervalDays": 14,
+    "wateringNotes": "Overwatering is the main risk. Let the soil dry out completely."
+  },
+  {
+    "plantName": "Cactus",
+    "description": "Desert plant that needs strong sun and very little water.",
+    "imageUrl": null,
+    "temp": { "min": 5, "perfect": 22, "max": 35 },
+    "humidity": { "min": 10, "perfect": 25, "max": 40 },
+    "light": { "min": 60, "perfect": 85, "max": 100 },
+    "wateringIntervalDays": 21,
+    "wateringNotes": "Water thoroughly only when soil is completely dry. Less in winter."
+  },
+  {
+    "plantName": "Aloe Vera",
+    "description": "Succulent with thick gel-filled leaves. Likes bright sun.",
+    "imageUrl": null,
+    "temp": { "min": 10, "perfect": 20, "max": 35 },
+    "humidity": { "min": 15, "perfect": 30, "max": 50 },
+    "light": { "min": 60, "perfect": 80, "max": 95 },
+    "wateringIntervalDays": 14,
+    "wateringNotes": "Soak the soil and let it dry fully before watering again."
+  },
+  {
+    "plantName": "Basil",
+    "description": "Fast-growing herb for kitchen windowsills. Needs lots of sun.",
+    "imageUrl": null,
+    "temp": { "min": 15, "perfect": 22, "max": 30 },
+    "humidity": { "min": 40, "perfect": 55, "max": 70 },
+    "light": { "min": 60, "perfect": 80, "max": 95 },
+    "wateringIntervalDays": 2,
+    "wateringNotes": "Keep the soil evenly moist. Avoid watering the leaves."
+  },
+  {
+    "plantName": "Mint",
+    "description": "Vigorous herb with a strong aroma. Spreads quickly, so keep it in a pot.",
+    "imageUrl": null,
+    "temp": { "min": 10, "perfect": 18, "max": 27 },
+    "humidity": { "min": 50, "perfect": 60, "max": 80 },
+    "light": { "min": 40, "perfect": 70, "max": 90 },
+    "wateringIntervalDays": 3,
+    "wateringNotes": "Keep the soil consistently moist."
+  },
+  {
+    "plantName": "Peace Lily",
+    "description": "Flowering plant with dark green leaves. Shows drooping when thirsty.",
+    "imageUrl": null,
+    "temp": { "min": 16, "perfect": 22, "max": 30 },
+    "humidity": { "min": 50, "perfect": 60, "max": 80 },
+    "light": { "min": 20, "perfect": 50, "max": 75 },
+    "wateringIntervalDays": 5,
+    "wateringNotes": "Water when the top few cm of soil are dry. It droops when it needs water."
+  },
+  {
+    "plantName": "Boston Fern",
+    "description": "Feathery fern that loves humidity. Sensitive to dry air.",
+    "imageUrl": null,
+    "temp": { "min": 15, "perfect": 20, "max": 27 },
+    "humidity": { "min": 50, "perfect": 70, "max": 90 },
+    "light": { "min": 25, "perfect": 50, "max": 70 },
+    "wateringIntervalDays": 3,
+    "wateringNotes": "Keep the soil moist but not soggy."
+  },
+  {
+    "plantName": "Lavender",
+    "description": "Fragrant Mediterranean herb. Needs full sun and good drainage.",
+    "imageUrl": null,
+    "temp": { "min": 5, "perfect": 18, "max": 30 },
+    "humidity": { "min": 20, "perfect": 35, "max": 55 },
+    "light": { "min": 70, "perfect": 90, "max": 100 },
+    "wateringIntervalDays": 10,
+    "wateringNotes": "Allow the soil to dry between waterings. Overwatering causes root rot."
+  },
+  {
+    "plantName": "Tomato",
+    "description": "Fruiting plant for sunny windowsills. Needs warmth and strong light.",
+    "imageUrl": null,
+    "temp": { "min": 15, "perfect": 24, "max": 32 },
+    "humidity": { "min": 40, "perfect": 60, "max": 75 },
+    "light": { "min": 70, "perfect": 90, "max": 100 },
+    "wateringIntervalDays": 2,
+    "wateringNotes": "Water deeply and regularly to avoid blossom end rot."
+  },
+  {
+    "plantName": "Chili Pepper",
+    "description": "Compact pepper plant that produces small hot fruit indoors with enough light.",
+    "imageUrl": null,
+    "temp": { "min": 16, "perfect": 25, "max": 32 },
+    "humidity": { "min": 40, "perfect": 55, "max": 70 },
+    "light": { "min": 70, "perfect": 90, "max": 100 },
+    "wateringIntervalDays": 3,
+    "wateringNotes": "Keep the soil lightly moist. Let the top layer dry slightly between waterings."
+  },
+  {
+    "plantName": "Spider Plant",
+    "description": "Arching plant with striped leaves and plantlets. Good for beginners.",
+    "imageUrl": null,
+    "temp": { "min": 10, "perfect": 21, "max": 30 },
+    "humidity": { "min": 40, "perfect": 55, "max": 75 },
+    "light": { "min": 40, "perfect": 65, "max": 85 },
+    "wateringIntervalDays": 6,
+    "wateringNotes": "Water when the top of the soil feels dry. Brown tips mean too much fluoride or dry air."
+  }
+]

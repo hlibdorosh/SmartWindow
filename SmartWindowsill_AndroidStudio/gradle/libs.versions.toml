@@ -11,6 +11,7 @@ composeBom = "2026.02.01"
 accompanistPermissions = "0.37.3"
 navigationCompose = "2.8.5"
 room = "2.8.4"
+anthropic = "2.34.0"
 ksp = "2.3.0"
 
 [libraries]
@@ -33,6 +34,7 @@ androidx-navigation-compose = { group = "androidx.navigation", name = "navigatio
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+anthropic-java = { group = "com.anthropic", name = "anthropic-java", version.ref = "anthropic" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

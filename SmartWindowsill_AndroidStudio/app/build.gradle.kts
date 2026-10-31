@@ -1,3 +1,10 @@
+import java.util.Properties
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -21,6 +28,13 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Read from local.properties (git-ignored): anthropic.apiKey=sk-ant-...
+        buildConfigField(
+            "String",
+            "ANTHROPIC_API_KEY",
+            "\"${localProperties.getProperty("anthropic.apiKey", "")}\""
+        )
     }
 
     buildTypes {
@@ -38,6 +52,13 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+    packaging {
+        resources {
+            // Several Anthropic SDK dependencies ship this license-only file; keep one copy out of the APK
+            excludes += "META-INF/DEPENDENCIES"
+        }
     }
 }
 
@@ -64,4 +85,7 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+
+    // Claude API (plant care info)
+    implementation(libs.anthropic.java)
 }

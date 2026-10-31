@@ -1,0 +1,154 @@
+package com.example.smartwindowsill
+
+import android.Manifest
+import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import java.io.File
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.dp
+
+@Composable
+fun AddPlantDialog(viewModel: PlantsViewModel, onDismiss: () -> Unit) {
+    val photoPath by viewModel.photoPath.collectAsState()
+    val isAdding by viewModel.isAdding.collectAsState()
+    val error by viewModel.error.collectAsState()
+
+    var name by rememberSaveable { mutableStateOf("") }
+    var nickname by rememberSaveable { mutableStateOf("") }
+
+    val photoSource = rememberPhotoSource { viewModel.onPhotoPicked(it) }
+    val onCameraClick = photoSource.takePhoto
+
+    val dismiss = {
+        viewModel.cancelDraft()
+        onDismiss()
+    }
+
+    AlertDialog(
+        onDismissRequest = { if (!isAdding) dismiss() },
+        title = { Text("Новое растение") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val bitmap = remember(photoPath) {
+                        photoPath?.let { BitmapFactory.decodeFile(it)?.asImageBitmap() }
+                    }
+                    if (bitmap != null) {
+                        Image(
+                            bitmap = bitmap,
+                            contentDescription = "Фото растения",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Text("Добавьте фото растения")
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onCameraClick,
+                        enabled = !isAdding,
+                        modifier = Modifier.weight(1f)
+                    ) { Text("Камера") }
+                    OutlinedButton(
+                        onClick = photoSource.pickFromGallery,
+                        enabled = !isAdding,
+                        modifier = Modifier.weight(1f)
+                    ) { Text("Галерея") }
+                }
+
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Название растения") },
+                    singleLine = true,
+                    enabled = !isAdding,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = nickname,
+                    onValueChange = { nickname = it },
+                    label = { Text("Никнейм") },
+                    singleLine = true,
+                    enabled = !isAdding,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                error?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error)
+                }
+
+                if (isAdding) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                        Spacer(modifier = Modifier.size(12.dp))
+                        Text("Claude подбирает условия...")
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = !isAdding && photoPath != null && name.isNotBlank() && nickname.isNotBlank(),
+                onClick = { viewModel.addPlant(name, nickname, onAdded = onDismiss) }
+            ) {
+                Text("Добавить")
+            }
+        },
+        dismissButton = {
+            TextButton(enabled = !isAdding, onClick = dismiss) {
+                Text("Отмена")
+            }
+        }
+    )
+}

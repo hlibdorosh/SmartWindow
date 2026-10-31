@@ -26,8 +26,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // Отладочное поле: последний полученный сырый буфер/сообщение
     private val _raw = MutableStateFlow("")
     val raw: StateFlow<String> = _raw
+
+    private val conditionRepository = ConditionRepository((application as App).database)
+    private var lastRecordedAt = 0L
+    private val RECORD_INTERVAL_MS = 60_000L
+
     init {
-        // Начинаем слушить входящий сырой текст в фоновом режиме
+        // Начинаем слушать входящий сырой текст в фоновом режиме
         viewModelScope.launch {
             bluetoothManager.rawSensorData.collect { rawText ->
                 // Сохраняем для отладки и парсим
@@ -40,6 +45,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // Вызывается извне (например из Activity) после получения runtime-разрешений
     fun startConnect() {
         bluetoothManager.connect()
+    }
+
+    // Сохраняем не чаще раза в минуту: датчик шлёт данные каждые 5 с, для дневных агрегатов этого достаточно
+    private fun recordSample(temperature: Float, humidity: Float, lux: Float) {
+        val now = System.currentTimeMillis()
+        if (now - lastRecordedAt < RECORD_INTERVAL_MS) return
+        lastRecordedAt = now
+        viewModelScope.launch {
+            try {
+                conditionRepository.record(temperature, humidity, lux, now = now)
+            } catch (_: Exception) {
+                // Сбой записи истории не должен ломать показ текущих значений
+            }
+        }
     }
 
     private fun parseData(text: String) {
@@ -61,6 +80,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         val lux = 500000f / rLdr
                         
                         _light.value = "${lux.toInt()} lx"
+                        if (t != null && h != null) recordSample(t, h, lux)
                     }
                     return
                 }

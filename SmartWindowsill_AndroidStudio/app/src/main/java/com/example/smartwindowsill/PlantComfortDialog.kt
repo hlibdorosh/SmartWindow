@@ -39,7 +39,7 @@ private val RANGE_OPTIONS = listOf(7, 30, 90)
 @Composable
 fun PlantComfortDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -> Unit) {
     var rangeDays by rememberSaveable { mutableStateOf(30) }
-    // Включённые параметры: по умолчанию три доступных датчика (почва — по желанию)
+    // Включённые параметры: по умолчанию три доступных датчика
     var active by rememberSaveable { mutableStateOf(setOf(Metric.TEMPERATURE, Metric.HUMIDITY, Metric.LIGHT)) }
     var selectedDay by rememberSaveable { mutableStateOf<Long?>(null) }
 
@@ -51,7 +51,6 @@ fun PlantComfortDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
     val points = remember(days, byDay, active, plant) {
         days.map { d -> byDay[d]?.let { computeComfort(it, plant, active) } }
     }
-    val hasSoilData = remember(history) { history.any { it.soilMean != null } }
 
     val selectedIndex = remember(points, selectedDay) {
         val bySelection = selectedDay?.let { sel -> days.indexOf(sel).takeIf { it >= 0 && points[it] != null } }
@@ -84,8 +83,7 @@ fun PlantComfortDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Metric.entries.forEach { metric ->
-                        val available = plant.idealRange(metric) != null &&
-                            (metric != Metric.SOIL || hasSoilData)
+                        val available = plant.idealRange(metric) != null
                         val label = if (available) metric.label else "${metric.label} (нет данных)"
                         FilterChip(
                             selected = metric in active && available,

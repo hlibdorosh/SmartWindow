@@ -70,8 +70,7 @@ class PlantsViewModel(application: Application) : AndroidViewModel(application) 
                         imageUri = photo,
                         minTemp = info.minTemp, optTemp = info.optTemp, maxTemp = info.maxTemp,
                         minHumidity = info.minHumidity, optHumidity = info.optHumidity, maxHumidity = info.maxHumidity,
-                        minLight = info.minLight, optLight = info.optLight, maxLight = info.maxLight,
-                        minSoil = info.minSoil, optSoil = info.optSoil, maxSoil = info.maxSoil
+                        minLight = info.minLight, optLight = info.optLight, maxLight = info.maxLight
                     )
                 )
                 _photoPath.value = null // фото теперь принадлежит растению, не удаляем

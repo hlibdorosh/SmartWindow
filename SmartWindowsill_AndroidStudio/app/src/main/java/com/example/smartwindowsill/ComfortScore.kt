@@ -6,8 +6,7 @@ import kotlin.math.max
 enum class Metric(val label: String, val unit: String) {
     TEMPERATURE("Температура", "°C"),
     HUMIDITY("Влажность", "%"),
-    LIGHT("Свет", "lx"),
-    SOIL("Почва", "%")
+    LIGHT("Свет", "lx")
 }
 
 data class IdealRange(val min: Float, val opt: Float, val max: Float)
@@ -16,8 +15,6 @@ fun Plant.idealRange(metric: Metric): IdealRange? = when (metric) {
     Metric.TEMPERATURE -> IdealRange(minTemp, optTemp, maxTemp)
     Metric.HUMIDITY -> IdealRange(minHumidity, optHumidity, maxHumidity)
     Metric.LIGHT -> IdealRange(minLight, optLight, maxLight)
-    Metric.SOIL ->
-        if (minSoil != null && optSoil != null && maxSoil != null) IdealRange(minSoil, optSoil, maxSoil) else null
 }
 
 // (mean, min, max) параметра за день или null, если датчика/данных нет
@@ -27,8 +24,6 @@ fun DailyCondition.stat(metric: Metric): DayStat? = when (metric) {
     Metric.TEMPERATURE -> DayStat(tempMean, tempMin, tempMax)
     Metric.HUMIDITY -> DayStat(humidityMean, humidityMin, humidityMax)
     Metric.LIGHT -> DayStat(lightMean, lightMin, lightMax)
-    Metric.SOIL ->
-        if (soilMean != null && soilMin != null && soilMax != null) DayStat(soilMean, soilMin, soilMax) else null
 }
 
 /**
@@ -98,8 +93,8 @@ fun computeComfort(day: DailyCondition, plant: Plant, active: Set<Metric>): Comf
     return ComfortPoint(
         day = day.day,
         index = index,
-        low = worstSum / n * 100f,
-        high = bestSum / n * 100f,
+        low = (worstSum / n * 100f).coerceIn(0f, 100f),
+        high = (bestSum / n * 100f).coerceIn(0f, 100f),
         parts = withLoss
     )
 }

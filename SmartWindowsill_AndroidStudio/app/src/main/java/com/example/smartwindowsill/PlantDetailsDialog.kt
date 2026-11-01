@@ -1,12 +1,12 @@
 package com.example.smartwindowsill
 
-import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -41,9 +42,48 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
     val error by viewModel.error.collectAsState()
     val photoSource = rememberPhotoSource { viewModel.changePhoto(plant, it) }
     var showComfort by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    // Данные микроклимата за последние 7 дней для поправки графика полива
+    val recentHistory by remember(plant) {
+        viewModel.dailyHistory(System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000L)
+    }.collectAsState(initial = emptyList())
+
+    val wateringStatus = remember(plant, recentHistory) {
+        WateringAdvisor.computeStatus(plant, recentHistory)
+    }
 
     if (showComfort) {
         PlantComfortDialog(plant = plant, viewModel = viewModel, onDismiss = { showComfort = false })
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Удалить растение?") },
+            text = {
+                Text("Вы уверены, что хотите удалить «${plant.nickname.ifBlank { plant.name }}»? Это действие нельзя отменить.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirm = false
+                        viewModel.deletePlant(plant)
+                        onDismiss()
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Удалить", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Отмена")
+                }
+            }
+        )
     }
 
     val dismiss = {
@@ -87,7 +127,7 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                     contentAlignment = Alignment.Center
                 ) {
                     val bitmap = remember(plant.imageUri) {
-                        plant.imageUri?.let { BitmapFactory.decodeFile(it)?.asImageBitmap() }
+                        decodeSampledBitmap(plant.imageUri)?.asImageBitmap()
                     }
                     if (bitmap != null) {
                         Image(
@@ -118,13 +158,17 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                 }
 
                 InfoRow("Добавлено", formatDate(plant.addedAt))
-                InfoRow("Последний полив", plant.lastWatered?.let { formatDate(it) } ?: "ещё не поливали")
+
+                // Полив растения (упрощенный блок вместо вложенной карточки)
+                InfoRow("Частота полива", "раз в ${wateringStatus.intervalDays} дн.")
+                InfoRow("Последний полив", wateringStatus.lastWateredText)
+                InfoRow("Следующий полив", wateringStatus.nextWateringText)
 
                 OutlinedButton(
                     onClick = { viewModel.markWatered(plant) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("💧 Полито сейчас")
+                    Text("💧 Отметить полив")
                 }
 
                 InfoRow("Температура", "${plant.minTemp.fmt()}–${plant.maxTemp.fmt()} °C (идеал ${plant.optTemp.fmt()})")
@@ -136,6 +180,18 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("📈 История комфорта")
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                OutlinedButton(
+                    onClick = { showDeleteConfirm = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("🗑️ Удалить растение")
                 }
 
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }

@@ -7,7 +7,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [Plant::class, SensorHistory::class, DailyCondition::class],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -159,6 +159,13 @@ abstract class AppDatabase : RoomDatabase() {
                 )
                 db.execSQL("DROP TABLE `daily_condition_history`")
                 db.execSQL("ALTER TABLE `daily_condition_history_new` RENAME TO `daily_condition_history`")
+            }
+        }
+
+        // v6 -> v7: plants got a wateringIntervalDays column
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE plants ADD COLUMN wateringIntervalDays INTEGER")
             }
         }
     }

@@ -1,33 +1,21 @@
 package com.example.smartwindowsill
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.graphics.BitmapFactory
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
-import java.io.File
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -76,7 +64,7 @@ fun AddPlantDialog(viewModel: PlantsViewModel, onDismiss: () -> Unit) {
                     contentAlignment = Alignment.Center
                 ) {
                     val bitmap = remember(photoPath) {
-                        photoPath?.let { BitmapFactory.decodeFile(it)?.asImageBitmap() }
+                        decodeSampledBitmap(photoPath)?.asImageBitmap()
                     }
                     if (bitmap != null) {
                         Image(

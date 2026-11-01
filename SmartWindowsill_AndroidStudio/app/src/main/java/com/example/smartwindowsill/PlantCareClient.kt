@@ -18,7 +18,8 @@ data class PlantCareInfo(
     val minTemp: Float, val optTemp: Float, val maxTemp: Float,         // °C
     val minHumidity: Float, val optHumidity: Float, val maxHumidity: Float, // %
     val minLight: Float, val optLight: Float, val maxLight: Float,       // lx
-    val scientificName: String? = null                                  // Научное/латинское название
+    val scientificName: String? = null,                                 // Научное/латинское название
+    val wateringIntervalDays: Int? = null                               // Базовый рекомендуемый интервал полива в днях
 )
 
 object PlantCareClient {
@@ -43,6 +44,7 @@ object PlantCareClient {
                 estimate its ideal growing conditions for an indoor windowsill.
                 Respond with ONLY a JSON object, no other text, with these keys:
                 "scientificName": string (Latin botanical name, e.g. "Monstera deliciosa"),
+                "wateringIntervalDays": integer (recommended baseline watering interval in days for a standard indoor pot, e.g. 7),
                 "minTemp", "optTemp", "maxTemp": numbers (degrees Celsius),
                 "minHumidity", "optHumidity", "maxHumidity": numbers (relative humidity, percent),
                 "minLight", "optLight", "maxLight": numbers (illuminance, lux).
@@ -85,12 +87,14 @@ object PlantCareClient {
         val json = JSONObject(text.substring(start, end + 1))
         fun num(key: String) = json.getDouble(key).toFloat()
         val sciName = json.optString("scientificName", "").trim().takeIf { it.isNotEmpty() }
+        val wateringDays = json.optInt("wateringIntervalDays", 0).takeIf { it > 0 }
 
         val info = PlantCareInfo(
             minTemp = num("minTemp"), optTemp = num("optTemp"), maxTemp = num("maxTemp"),
             minHumidity = num("minHumidity"), optHumidity = num("optHumidity"), maxHumidity = num("maxHumidity"),
             minLight = num("minLight"), optLight = num("optLight"), maxLight = num("maxLight"),
-            scientificName = sciName
+            scientificName = sciName,
+            wateringIntervalDays = wateringDays
         )
 
         require(info.minTemp <= info.optTemp && info.optTemp <= info.maxTemp) { "Неверные температуры от Claude" }

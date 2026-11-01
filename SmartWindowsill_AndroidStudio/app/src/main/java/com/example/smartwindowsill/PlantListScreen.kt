@@ -1,6 +1,5 @@
 package com.example.smartwindowsill
 
-import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -44,6 +43,8 @@ fun PlantListScreen(
     var selectedPlantId by remember { mutableStateOf<Int?>(null) }
     val selectedPlant = plants.firstOrNull { it.id == selectedPlantId }
 
+    var plantToDelete by remember { mutableStateOf<Plant?>(null) }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         floatingActionButton = {
@@ -67,9 +68,43 @@ fun PlantListScreen(
                 selectedMetric = selectedMetric,
                 onSelectMetric = { selectedMetric = it }
             )
-            PlantList(plants = plants, onPlantClick = { selectedPlantId = it.id })
+            PlantList(
+                plants = plants,
+                onPlantClick = { selectedPlantId = it.id },
+                onWaterClick = { plantsViewModel.markWatered(it) },
+                onDeleteClick = { plantToDelete = it }
+            )
         }
     } // Конец Scaffold
+
+    if (plantToDelete != null) {
+        val target = plantToDelete!!
+        AlertDialog(
+            onDismissRequest = { plantToDelete = null },
+            title = { Text("Удалить растение?") },
+            text = {
+                Text("Вы уверены, что хотите удалить «${target.nickname.ifBlank { target.name }}»? Это действие нельзя отменить.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        plantsViewModel.deletePlant(target)
+                        plantToDelete = null
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Удалить", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { plantToDelete = null }) {
+                    Text("Отмена")
+                }
+            }
+        )
+    }
 
     if (selectedPlant != null) {
         PlantDetailsDialog(
@@ -230,67 +265,107 @@ fun StatusSensorRow(
 }
 
 @Composable
-fun PlantList(plants: List<Plant>, onPlantClick: (Plant) -> Unit){
-
+fun PlantList(
+    plants: List<Plant>,
+    onPlantClick: (Plant) -> Unit,
+    onWaterClick: (Plant) -> Unit,
+    onDeleteClick: (Plant) -> Unit
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = PaddingValues(16.dp)
     ) {
         items(plants, key = { it.id }) { plant ->
-            PlantCard(plant = plant, onClick = { onPlantClick(plant) })
+            PlantCard(
+                plant = plant,
+                onClick = { onPlantClick(plant) },
+                onWaterClick = { onWaterClick(plant) },
+                onDeleteClick = { onDeleteClick(plant) }
+            )
         }
     }
 }
 
 @Composable
-fun PlantCard(plant: Plant, onClick: () -> Unit) {
+fun PlantCard(
+    plant: Plant,
+    onClick: () -> Unit,
+    onWaterClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
     Card(
-        modifier = Modifier.fillMaxWidth().clickable{ onClick() },
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
         Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(14.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             val photo = remember(plant.imageUri) {
-                plant.imageUri?.let { BitmapFactory.decodeFile(it)?.asImageBitmap() }
+                decodeSampledBitmap(plant.imageUri)?.asImageBitmap()
             }
             if (photo != null) {
                 Image(
                     bitmap = photo,
                     contentDescription = plant.name,
-                    modifier = Modifier.size(56.dp).clip(RoundedCornerShape(12.dp)),
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(12.dp)),
                     contentScale = ContentScale.Crop
                 )
             } else {
                 Text(text = "🌱", fontSize = 32.sp)
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(14.dp))
 
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = plant.nickname.ifBlank { plant.name },
-                    fontSize = 20.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
                 if (plant.nickname.isNotBlank()) {
                     Text(
                         text = plant.name,
-                        fontSize = 14.sp,
+                        fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "Статус: Подключено",
-                    fontSize = 14.sp,
+                    fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
+            }
+
+            Spacer(modifier = Modifier.width(6.dp))
+
+            // Кнопка полива прямо на карточке растения справа
+            FilledTonalIconButton(
+                onClick = onWaterClick,
+                modifier = Modifier.size(42.dp)
+            ) {
+                Text("💧", fontSize = 20.sp)
+            }
+
+            Spacer(modifier = Modifier.width(4.dp))
+
+            // Кнопка удаления растения с запросом подтверждения
+            IconButton(
+                onClick = onDeleteClick,
+                modifier = Modifier.size(38.dp)
+            ) {
+                Text("🗑️", fontSize = 18.sp)
             }
         }
     }

@@ -7,7 +7,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [Plant::class, SensorHistory::class, DailyCondition::class],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -108,17 +108,17 @@ abstract class AppDatabase : RoomDatabase() {
                     """
                     CREATE TABLE IF NOT EXISTS `sensor_history_new` (
                         `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                        `timestamp` INTEGER NOT NULL,
                         `temperature` REAL NOT NULL,
                         `humidity` REAL NOT NULL,
-                        `light` REAL NOT NULL
+                        `light` REAL NOT NULL,
+                        `timestamp` INTEGER NOT NULL
                     )
                     """.trimIndent()
                 )
                 db.execSQL(
                     """
-                    INSERT INTO `sensor_history_new` (`id`, `timestamp`, `temperature`, `humidity`, `light`)
-                    SELECT `id`, `timestamp`, `temperature`, `humidity`, `light`
+                    INSERT INTO `sensor_history_new` (`id`, `temperature`, `humidity`, `light`, `timestamp`)
+                    SELECT `id`, `temperature`, `humidity`, `light`, `timestamp`
                     FROM `sensor_history`
                     """.trimIndent()
                 )
@@ -166,6 +166,49 @@ abstract class AppDatabase : RoomDatabase() {
         val MIGRATION_6_7 = object : Migration(6, 7) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE plants ADD COLUMN wateringIntervalDays INTEGER")
+            }
+        }
+
+        // v7 -> v8: remove name column from plants, migrate empty nickname to name
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `plants_new` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `nickname` TEXT NOT NULL,
+                        `scientificName` TEXT,
+                        `imageUri` TEXT,
+                        `minTemp` REAL NOT NULL,
+                        `optTemp` REAL NOT NULL,
+                        `maxTemp` REAL NOT NULL,
+                        `minHumidity` REAL NOT NULL,
+                        `optHumidity` REAL NOT NULL,
+                        `maxHumidity` REAL NOT NULL,
+                        `minLight` REAL NOT NULL,
+                        `optLight` REAL NOT NULL,
+                        `maxLight` REAL NOT NULL,
+                        `addedAt` INTEGER NOT NULL DEFAULT 0,
+                        `lastWatered` INTEGER,
+                        `wateringIntervalDays` INTEGER
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    INSERT INTO `plants_new` (`id`, `nickname`, `scientificName`, `imageUri`,
+                        `minTemp`, `optTemp`, `maxTemp`, `minHumidity`, `optHumidity`, `maxHumidity`,
+                        `minLight`, `optLight`, `maxLight`, `addedAt`, `lastWatered`, `wateringIntervalDays`)
+                    SELECT `id`,
+                        CASE WHEN `nickname` IS NOT NULL AND TRIM(`nickname`) != '' THEN `nickname` ELSE `name` END,
+                        `scientificName`, `imageUri`,
+                        `minTemp`, `optTemp`, `maxTemp`, `minHumidity`, `optHumidity`, `maxHumidity`,
+                        `minLight`, `optLight`, `maxLight`, `addedAt`, `lastWatered`, `wateringIntervalDays`
+                    FROM `plants`
+                    """.trimIndent()
+                )
+                db.execSQL("DROP TABLE `plants`")
+                db.execSQL("ALTER TABLE `plants_new` RENAME TO `plants`")
             }
         }
     }

@@ -18,10 +18,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.font.FontWeight
 
 @Composable
 fun PlantListScreen(
@@ -42,8 +42,6 @@ fun PlantListScreen(
     // Храним id, а не объект, чтобы окно обновлялось после изменений в БД
     var selectedPlantId by remember { mutableStateOf<Int?>(null) }
     val selectedPlant = plants.firstOrNull { it.id == selectedPlantId }
-
-    var plantToDelete by remember { mutableStateOf<Plant?>(null) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -71,40 +69,10 @@ fun PlantListScreen(
             PlantList(
                 plants = plants,
                 onPlantClick = { selectedPlantId = it.id },
-                onWaterClick = { plantsViewModel.markWatered(it) },
-                onDeleteClick = { plantToDelete = it }
+                onWaterClick = { plantsViewModel.markWatered(it) }
             )
         }
     } // Конец Scaffold
-
-    if (plantToDelete != null) {
-        val target = plantToDelete!!
-        AlertDialog(
-            onDismissRequest = { plantToDelete = null },
-            title = { Text("Удалить растение?") },
-            text = {
-                Text("Вы уверены, что хотите удалить «${target.nickname.ifBlank { target.name }}»? Это действие нельзя отменить.")
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        plantsViewModel.deletePlant(target)
-                        plantToDelete = null
-                    },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Text("Удалить", fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { plantToDelete = null }) {
-                    Text("Отмена")
-                }
-            }
-        )
-    }
 
     if (selectedPlant != null) {
         PlantDetailsDialog(
@@ -268,8 +236,7 @@ fun StatusSensorRow(
 fun PlantList(
     plants: List<Plant>,
     onPlantClick: (Plant) -> Unit,
-    onWaterClick: (Plant) -> Unit,
-    onDeleteClick: (Plant) -> Unit
+    onWaterClick: (Plant) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -280,8 +247,7 @@ fun PlantList(
             PlantCard(
                 plant = plant,
                 onClick = { onPlantClick(plant) },
-                onWaterClick = { onWaterClick(plant) },
-                onDeleteClick = { onDeleteClick(plant) }
+                onWaterClick = { onWaterClick(plant) }
             )
         }
     }
@@ -291,8 +257,7 @@ fun PlantList(
 fun PlantCard(
     plant: Plant,
     onClick: () -> Unit,
-    onWaterClick: () -> Unit,
-    onDeleteClick: () -> Unit
+    onWaterClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -315,7 +280,7 @@ fun PlantCard(
             if (photo != null) {
                 Image(
                     bitmap = photo,
-                    contentDescription = plant.name,
+                    contentDescription = plant.nickname,
                     modifier = Modifier
                         .size(56.dp)
                         .clip(RoundedCornerShape(12.dp)),
@@ -329,13 +294,13 @@ fun PlantCard(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = plant.nickname.ifBlank { plant.name },
+                    text = plant.nickname,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
-                if (plant.nickname.isNotBlank()) {
+                plant.scientificName?.takeIf { it.isNotBlank() }?.let { sci ->
                     Text(
-                        text = plant.name,
+                        text = sci,
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -356,16 +321,6 @@ fun PlantCard(
                 modifier = Modifier.size(42.dp)
             ) {
                 Text("💧", fontSize = 20.sp)
-            }
-
-            Spacer(modifier = Modifier.width(4.dp))
-
-            // Кнопка удаления растения с запросом подтверждения
-            IconButton(
-                onClick = onDeleteClick,
-                modifier = Modifier.size(38.dp)
-            ) {
-                Text("🗑️", fontSize = 18.sp)
             }
         }
     }

@@ -68,7 +68,7 @@ fun PlantComfortDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                 modifier = Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("Комфорт: ${plant.nickname.ifBlank { plant.name }}", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Комфорт: ${plant.nickname}", fontSize = 20.sp, fontWeight = FontWeight.Bold)
 
                 // Период
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

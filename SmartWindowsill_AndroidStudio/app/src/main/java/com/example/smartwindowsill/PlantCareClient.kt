@@ -18,7 +18,7 @@ data class PlantCareInfo(
     val minTemp: Float, val optTemp: Float, val maxTemp: Float,         // °C
     val minHumidity: Float, val optHumidity: Float, val maxHumidity: Float, // %
     val minLight: Float, val optLight: Float, val maxLight: Float,       // lx
-    val scientificName: String? = null,                                 // Научное/латинское название
+    val scientificName: String? = null,                                 // Общепринятое название вида (по-русски, для садоводов и флористов)
     val wateringIntervalDays: Int? = null                               // Базовый рекомендуемый интервал полива в днях
 )
 
@@ -40,10 +40,11 @@ object PlantCareClient {
 
             val prompt = """
                 The attached photo shows a houseplant. Its name is "$plantName".
-                Identify its scientific/botanical Latin binomial name (e.g. "Monstera deliciosa") and
-                estimate its ideal growing conditions for an indoor windowsill.
+                Identify what kind of houseplant this is. Provide its common casual-professional Russian name as commonly used by gardeners, houseplant enthusiasts, and florists in Russian (for example: "Фикус Бенджамина", "Монстера деликатесная", "Замиокулькас замиелистный", "Сансевиерия трехполосная", "Спатифиллум Уоллиса", "Хлорофитум хохлатый", "Толстянка овальная").
+                CRITICAL INSTRUCTION: Do NOT use Latin binomial names (like "Ficus benjamina" or "Pinus nigra") or dry academic biologist taxonomy. Return the natural, friendly, yet professional Russian name that a florist shop, plant nursery, or indoor plant community uses.
+                Also estimate its ideal growing conditions for an indoor windowsill.
                 Respond with ONLY a JSON object, no other text, with these keys:
-                "scientificName": string (Latin botanical name, e.g. "Monstera deliciosa"),
+                "scientificName": string (casual-professional plant species name in Russian, e.g. "Фикус Бенджамина"),
                 "wateringIntervalDays": integer (recommended baseline watering interval in days for a standard indoor pot, e.g. 7),
                 "minTemp", "optTemp", "maxTemp": numbers (degrees Celsius),
                 "minHumidity", "optHumidity", "maxHumidity": numbers (relative humidity, percent),

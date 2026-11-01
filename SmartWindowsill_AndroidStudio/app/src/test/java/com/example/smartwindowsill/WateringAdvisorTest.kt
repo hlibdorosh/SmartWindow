@@ -8,7 +8,7 @@ import org.junit.Test
 class WateringAdvisorTest {
 
     private val plant = Plant(
-        name = "Monstera",
+        nickname = "Monstera",
         imageUri = null,
         minTemp = 18f, optTemp = 22f, maxTemp = 28f,
         minHumidity = 50f, optHumidity = 65f, maxHumidity = 80f,

@@ -16,16 +16,17 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileOutputStream
+import java.util.UUID
 
-class PlantsViewModel(application: Application) : AndroidViewModel(application) {
+class PlantsViewModel(app: Application) : AndroidViewModel(app) {
 
-    private val dao = (application as App).database.plantDao()
-    private val photosDir = File(application.filesDir, "plants").apply { mkdirs() }
+    private val dao = (app as App).database.plantDao()
 
     val plants: StateFlow<List<Plant>> = dao.getAllPlants()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    // Фото, выбранное в диалоге, пока растение не добавлено
+    // Путь к сохраненному в приложении временному файлу фото нового растения (или null)
     private val _photoPath = MutableStateFlow<String?>(null)
     val photoPath: StateFlow<String?> = _photoPath
 
@@ -62,12 +63,15 @@ class PlantsViewModel(application: Application) : AndroidViewModel(application) 
             _error.value = null
             try {
                 val jpeg = withContext(Dispatchers.IO) { File(photo).readBytes() }
+                // Название растения используется только чтобы Claude понял, что это за растение
                 val info = PlantCareClient.fetchCareInfo(name.trim(), jpeg)
+
+                // Если никнейм не задан, сохраняем введенное название как никнейм
+                val effectiveNickname = nickname.trim().ifBlank { name.trim() }
 
                 dao.insertPlant(
                     Plant(
-                        name = name.trim(),
-                        nickname = nickname.trim(),
+                        nickname = effectiveNickname,
                         scientificName = info.scientificName,
                         imageUri = photo,
                         minTemp = info.minTemp, optTemp = info.optTemp, maxTemp = info.maxTemp,
@@ -83,6 +87,14 @@ class PlantsViewModel(application: Application) : AndroidViewModel(application) 
             } finally {
                 _isAdding.value = false
             }
+        }
+    }
+
+    fun updateNickname(plant: Plant, newNickname: String) {
+        val trimmed = newNickname.trim()
+        if (trimmed.isBlank()) return
+        viewModelScope.launch {
+            dao.updatePlant(plant.copy(nickname = trimmed))
         }
     }
 
@@ -176,21 +188,42 @@ class PlantsViewModel(application: Application) : AndroidViewModel(application) 
             }
         }
 
-        val finalBitmap = if (!matrix.isIdentity) {
-            val rotated = Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, matrix, true)
-            if (rotated != decoded) decoded.recycle()
-            rotated
+        val rotated = if (!matrix.isIdentity) {
+            val res = Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, matrix, true)
+            if (res !== decoded) decoded.recycle()
+            res
         } else {
             decoded
         }
 
-        val target = File(photosDir, "plant_${System.currentTimeMillis()}.jpg")
-        target.outputStream().use { finalBitmap.compress(Bitmap.CompressFormat.JPEG, 85, it) }
-        finalBitmap.recycle()
-        return target.absolutePath
+        val scaled = if (maxOf(rotated.width, rotated.height) > MAX_PHOTO_PX) {
+            val ratio = MAX_PHOTO_PX.toFloat() / maxOf(rotated.width, rotated.height)
+            Bitmap.createScaledBitmap(
+                rotated,
+                (rotated.width * ratio).toInt(),
+                (rotated.height * ratio).toInt(),
+                true
+            ).also { if (it !== rotated) rotated.recycle() }
+        } else {
+            rotated
+        }
+
+        val dir = File(getApplication<Application>().filesDir, "plants").apply { mkdirs() }
+        val target = File(dir, "${UUID.randomUUID()}.jpg")
+
+        return try {
+            FileOutputStream(target).use { out ->
+                scaled.compress(Bitmap.CompressFormat.JPEG, 85, out)
+            }
+            scaled.recycle()
+            target.absolutePath
+        } catch (e: Exception) {
+            target.delete()
+            null
+        }
     }
 
-    private companion object {
-        const val MAX_PHOTO_PX = 1024
+    companion object {
+        private const val MAX_PHOTO_PX = 1024
     }
 }

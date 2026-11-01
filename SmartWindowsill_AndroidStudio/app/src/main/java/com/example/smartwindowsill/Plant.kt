@@ -7,8 +7,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "plants")
 data class Plant(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val name: String,
-    @ColumnInfo(defaultValue = "") val nickname: String = "",
+    val nickname: String,
     val scientificName: String? = null,
     val imageUri: String?, // Путь к фотографии растения (файл в хранилище приложения)
 

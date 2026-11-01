@@ -15,8 +15,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -30,7 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,6 +44,7 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
     val photoSource = rememberPhotoSource { viewModel.changePhoto(plant, it) }
     var showComfort by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showEditNickname by remember { mutableStateOf(false) }
 
     // Данные микроклимата за последние 7 дней для поправки графика полива
     val recentHistory by remember(plant) {
@@ -57,12 +59,45 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
         PlantComfortDialog(plant = plant, viewModel = viewModel, onDismiss = { showComfort = false })
     }
 
+    if (showEditNickname) {
+        var editNicknameText by remember(plant.nickname) { mutableStateOf(plant.nickname) }
+        AlertDialog(
+            onDismissRequest = { showEditNickname = false },
+            title = { Text("Изменить никнейм") },
+            text = {
+                OutlinedTextField(
+                    value = editNicknameText,
+                    onValueChange = { editNicknameText = it },
+                    label = { Text("Никнейм") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = editNicknameText.isNotBlank(),
+                    onClick = {
+                        viewModel.updateNickname(plant, editNicknameText)
+                        showEditNickname = false
+                    }
+                ) {
+                    Text("Сохранить", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditNickname = false }) {
+                    Text("Отмена")
+                }
+            }
+        )
+    }
+
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title = { Text("Удалить растение?") },
             text = {
-                Text("Вы уверены, что хотите удалить «${plant.nickname.ifBlank { plant.name }}»? Это действие нельзя отменить.")
+                Text("Вы уверены, что хотите удалить «${plant.nickname}»? Это действие нельзя отменить.")
             },
             confirmButton = {
                 TextButton(
@@ -94,22 +129,23 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
     AlertDialog(
         onDismissRequest = dismiss,
         title = {
-            Column {
-                Text(plant.nickname.ifBlank { plant.name }, fontWeight = FontWeight.Bold)
-                if (plant.nickname.isNotBlank()) {
-                    Text(
-                        plant.name,
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(plant.nickname, fontWeight = FontWeight.Bold)
+                    plant.scientificName?.takeIf { it.isNotBlank() }?.let { sci ->
+                        Text(
+                            sci,
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
-                plant.scientificName?.takeIf { it.isNotBlank() }?.let { sci ->
-                    Text(
-                        sci,
-                        fontSize = 13.sp,
-                        fontStyle = FontStyle.Italic,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                IconButton(onClick = { showEditNickname = true }) {
+                    Text("✏️", fontSize = 18.sp)
                 }
             }
         },
@@ -132,7 +168,7 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                     if (bitmap != null) {
                         Image(
                             bitmap = bitmap,
-                            contentDescription = plant.name,
+                            contentDescription = plant.nickname,
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
                         )
@@ -153,8 +189,19 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                     }
                 }
 
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    InfoRow("Никнейм", plant.nickname)
+                    TextButton(onClick = { showEditNickname = true }) {
+                        Text("Изменить")
+                    }
+                }
+
                 plant.scientificName?.takeIf { it.isNotBlank() }?.let { sci ->
-                    InfoRow("Научное название", sci)
+                    InfoRow("Вид растения", sci)
                 }
 
                 InfoRow("Добавлено", formatDate(plant.addedAt))

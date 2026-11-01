@@ -133,9 +133,9 @@ fun AddPlantDialog(viewModel: PlantsViewModel, onDismiss: () -> Unit) {
 
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { name = it.replace("\n", "").replace("\r", "").replace("\t", "") },
+                    onValueChange = { name = InputSanitizer.filterInput(it, 60) },
                     label = { Text("Название растения (для Claude)") },
-                    supportingText = { Text("Используется только для подбора условий ухода") },
+                    supportingText = { Text("${name.length}/60 • Для подбора условий ухода") },
                     singleLine = true,
                     enabled = !isAdding,
                     modifier = Modifier.fillMaxWidth()
@@ -143,9 +143,9 @@ fun AddPlantDialog(viewModel: PlantsViewModel, onDismiss: () -> Unit) {
 
                 OutlinedTextField(
                     value = nickname,
-                    onValueChange = { nickname = it.replace("\n", "").replace("\r", "").replace("\t", "") },
+                    onValueChange = { nickname = InputSanitizer.filterInput(it, 60) },
                     label = { Text("Никнейм (необязательно)") },
-                    supportingText = { Text("Если пусто, будет использовано название") },
+                    supportingText = { Text("${nickname.length}/60 • Если пусто, будет использовано название") },
                     singleLine = true,
                     enabled = !isAdding,
                     modifier = Modifier.fillMaxWidth()

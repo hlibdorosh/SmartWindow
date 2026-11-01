@@ -58,13 +58,12 @@ class PlantsViewModel(app: Application) : AndroidViewModel(app) {
 
     fun addPlant(name: String, nickname: String, onAdded: () -> Unit) {
         val photo = _photoPath.value ?: return
-        val cleanName = InputSanitizer.sanitizePlantName(name)
-        val cleanNickname = InputSanitizer.sanitizeNickname(nickname)
-
+        val cleanName = InputSanitizer.sanitize(name, 60)
         if (cleanName.isBlank()) {
-            _error.value = "Введите корректное название растения"
+            _error.value = "Укажите название растения"
             return
         }
+        val cleanNickname = InputSanitizer.sanitize(nickname, 60).ifBlank { cleanName }
 
         viewModelScope.launch {
             _isAdding.value = true
@@ -75,7 +74,7 @@ class PlantsViewModel(app: Application) : AndroidViewModel(app) {
                 val info = PlantCareClient.fetchCareInfo(cleanName, jpeg)
 
                 // Если никнейм не задан, сохраняем введенное название как никнейм
-                val effectiveNickname = cleanNickname.ifBlank { cleanName }
+                val effectiveNickname = cleanNickname
 
                 dao.insertPlant(
                     Plant(
@@ -99,10 +98,10 @@ class PlantsViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun updateNickname(plant: Plant, newNickname: String) {
-        val clean = InputSanitizer.sanitizeNickname(newNickname)
-        if (clean.isBlank()) return
+        val cleanNickname = InputSanitizer.sanitize(newNickname, 60)
+        if (cleanNickname.isBlank()) return
         viewModelScope.launch {
-            dao.updatePlant(plant.copy(nickname = clean))
+            dao.updatePlant(plant.copy(nickname = cleanNickname))
         }
     }
 

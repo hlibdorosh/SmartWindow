@@ -133,7 +133,7 @@ fun AddPlantDialog(viewModel: PlantsViewModel, onDismiss: () -> Unit) {
 
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { name = it },
+                    onValueChange = { name = it.replace("\n", "").replace("\r", "").replace("\t", "") },
                     label = { Text("Название растения (для Claude)") },
                     supportingText = { Text("Используется только для подбора условий ухода") },
                     singleLine = true,
@@ -143,7 +143,7 @@ fun AddPlantDialog(viewModel: PlantsViewModel, onDismiss: () -> Unit) {
 
                 OutlinedTextField(
                     value = nickname,
-                    onValueChange = { nickname = it },
+                    onValueChange = { nickname = it.replace("\n", "").replace("\r", "").replace("\t", "") },
                     label = { Text("Никнейм (необязательно)") },
                     supportingText = { Text("Если пусто, будет использовано название") },
                     singleLine = true,

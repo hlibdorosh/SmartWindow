@@ -72,7 +72,7 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
             text = {
                 OutlinedTextField(
                     value = editNicknameText,
-                    onValueChange = { editNicknameText = it },
+                    onValueChange = { editNicknameText = it.replace("\n", "").replace("\r", "").replace("\t", "") },
                     label = { Text("Никнейм") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()

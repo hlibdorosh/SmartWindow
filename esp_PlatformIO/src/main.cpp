@@ -31,6 +31,18 @@ class MyServerCallbacks : public BLEServerCallbacks {
   }
 };
 
+// Median of 15 samples: rejects ADC spikes/saturation glitches
+float readLight() {
+  int s[15];
+  for (int i = 0; i < 15; i++) { s[i] = analogRead(LIGHT_PIN); delayMicroseconds(200); }
+  for (int i = 1; i < 15; i++) {
+    int v = s[i], j = i - 1;
+    while (j >= 0 && s[j] > v) { s[j + 1] = s[j]; j--; }
+    s[j + 1] = v;
+  }
+  return s[7];
+}
+
 void sendSensorData() {
   if (!deviceConnected || pCharacteristic == nullptr) {
     return;
@@ -38,7 +50,7 @@ void sendSensorData() {
 
   float humidity = dht.readHumidity();
   float temperature = dht.readTemperature();
-  float light = analogRead(LIGHT_PIN);
+  float light = readLight();
 
   String payload = String(temperature, 1) + "," + String(humidity, 1) + "," + String(light, 0);
 
@@ -77,11 +89,11 @@ void setup() {
 }
 
 void loop() {
-  delay(5000);
+  delay(1000);
 
   float humidity = dht.readHumidity();
   float temperature = dht.readTemperature();
-  float light = analogRead(LIGHT_PIN);
+  float light = readLight();
 
   Serial.printf("Humidity: %.2f%%\n", humidity);
   Serial.printf("Temperature: %.2f°C\n", temperature);

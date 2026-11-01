@@ -29,6 +29,7 @@ class ConditionRepository(private val db: AppDatabase) {
     ) {
         // DHT возвращает NaN при сбое чтения — такие замеры не сохраняем
         if (!temperature.isFinite() || !humidity.isFinite() || !light.isFinite()) return
+        val safeLight = light.coerceIn(0f, 20000f)
 
         val sensorDao = db.sensorHistoryDao()
         val dailyDao = db.dailyConditionDao()
@@ -39,7 +40,7 @@ class ConditionRepository(private val db: AppDatabase) {
                     timestamp = now,
                     temperature = temperature,
                     humidity = humidity,
-                    light = light
+                    light = safeLight
                 )
             )
             val start = dayStartMillis(now)

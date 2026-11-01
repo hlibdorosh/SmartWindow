@@ -9,7 +9,9 @@ data class WateringStatus(
     val intervalDays: Int,            // Частота полива (дней, с поправкой на комфортные условия)
     val lastWateredText: String,      // Когда поливали ("3 дн. назад (29 окт.)", "ещё не поливали")
     val nextWateringText: String,     // Сколько до след. полива ("через ~2 дн.", "⚠️ Пора полить!")
-    val isUrgent: Boolean
+    val isUrgent: Boolean,
+    val waterPercent: Int,            // Процент оставшейся влаги (100%..0%)
+    val waterFraction: Float          // Доля оставшейся влаги (1.0f..0.0f)
 )
 
 object WateringAdvisor {
@@ -33,6 +35,16 @@ object WateringAdvisor {
 
         val multiplier = (fHum * fTemp).coerceIn(0.5f, 2.0f)
         val adjustedDays = (baseDays * multiplier).roundToInt().coerceAtLeast(1)
+
+        val totalIntervalMs = adjustedDays * 24L * 60L * 60L * 1000L
+        val (waterFraction, waterPercent) = if (plant.lastWatered != null) {
+            val elapsedMs = (now - plant.lastWatered).coerceAtLeast(0L)
+            val fraction = (1.0f - (elapsedMs.toDouble() / totalIntervalMs.toDouble()).toFloat()).coerceIn(0f, 1f)
+            val percent = (fraction * 100f).roundToInt()
+            fraction to percent
+        } else {
+            0f to 0
+        }
 
         val daysSince = plant.lastWatered?.let {
             val diffMs = (now - it).coerceAtLeast(0L)
@@ -65,7 +77,9 @@ object WateringAdvisor {
             intervalDays = adjustedDays,
             lastWateredText = lastWateredFormatted,
             nextWateringText = nextWateringFormatted,
-            isUrgent = isUrgent
+            isUrgent = isUrgent,
+            waterPercent = waterPercent,
+            waterFraction = waterFraction
         )
     }
 }

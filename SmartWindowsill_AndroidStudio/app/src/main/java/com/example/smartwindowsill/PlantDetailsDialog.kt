@@ -7,14 +7,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -30,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -189,14 +194,94 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                     }
                 }
 
-                Row(
+                // Карточка "Режим полива" с индикатором высыхания влаги
+                Card(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (wateringStatus.isUrgent)
+                            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.45f)
+                        else
+                            MaterialTheme.colorScheme.surfaceVariant
+                    )
                 ) {
-                    InfoRow("Никнейм", plant.nickname)
-                    TextButton(onClick = { showEditNickname = true }) {
-                        Text("Изменить")
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "💧 Режим полива",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp
+                            )
+                            Text(
+                                text = wateringStatus.nextWateringText,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (wateringStatus.isUrgent)
+                                    MaterialTheme.colorScheme.error
+                                else
+                                    MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        // Линия остатка воды: заполнена слева направо, проценты справа
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(10.dp)
+                                    .clip(RoundedCornerShape(5.dp))
+                                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
+                            ) {
+                                if (wateringStatus.waterFraction > 0f) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxHeight()
+                                            .fillMaxWidth(fraction = wateringStatus.waterFraction)
+                                            .align(Alignment.CenterStart)
+                                            .clip(RoundedCornerShape(5.dp))
+                                            .background(Color(0xFF4FC3F7))
+                                    )
+                                }
+                            }
+                            Text(
+                                text = "${wateringStatus.waterPercent}%",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text("Частота", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("раз в ${wateringStatus.intervalDays} дн.", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("Последний полив", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(wateringStatus.lastWateredText, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            }
+                        }
+
+                        OutlinedButton(
+                            onClick = { viewModel.markWatered(plant) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("💧 Отметить полив")
+                        }
                     }
                 }
 
@@ -205,18 +290,6 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                 }
 
                 InfoRow("Добавлено", formatDate(plant.addedAt))
-
-                // Полив растения (упрощенный блок вместо вложенной карточки)
-                InfoRow("Частота полива", "раз в ${wateringStatus.intervalDays} дн.")
-                InfoRow("Последний полив", wateringStatus.lastWateredText)
-                InfoRow("Следующий полив", wateringStatus.nextWateringText)
-
-                OutlinedButton(
-                    onClick = { viewModel.markWatered(plant) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("💧 Отметить полив")
-                }
 
                 InfoRow("Температура", "${plant.minTemp.fmt()}–${plant.maxTemp.fmt()} °C (идеал ${plant.optTemp.fmt()})")
                 InfoRow("Влажность", "${plant.minHumidity.fmt()}–${plant.maxHumidity.fmt()} % (идеал ${plant.optHumidity.fmt()})")

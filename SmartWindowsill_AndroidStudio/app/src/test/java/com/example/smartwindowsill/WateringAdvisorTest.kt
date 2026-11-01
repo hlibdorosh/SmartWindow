@@ -51,6 +51,8 @@ class WateringAdvisorTest {
         val status = WateringAdvisor.computeStatus(wateredPlant, listOf(day(22f, 65f)), now = now)
         assertTrue(status.isUrgent)
         assertTrue(status.nextWateringText.contains("Пора полить"))
+        assertEquals(0, status.waterPercent)
+        assertEquals(0f, status.waterFraction, 0.001f)
     }
 
     @Test
@@ -61,5 +63,7 @@ class WateringAdvisorTest {
         val status = WateringAdvisor.computeStatus(wateredPlant, listOf(day(22f, 65f)), now = now)
         assertFalse(status.isUrgent)
         assertTrue(status.lastWateredText.contains("вчера"))
+        assertEquals(86, status.waterPercent)
+        assertTrue(status.waterFraction > 0.8f)
     }
 }

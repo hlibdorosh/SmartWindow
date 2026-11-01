@@ -1,6 +1,6 @@
 package com.example.smartwindowsill
 
-import android.graphics.BitmapFactory
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,12 +17,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.font.FontWeight
 
 @Composable
 fun PlantListScreen(
@@ -38,6 +43,11 @@ fun PlantListScreen(
     var selectedMetric by remember { mutableStateOf(SensorChartMetric.TEMPERATURE) }
 
     val plants by plantsViewModel.plants.collectAsState()
+
+    // История для расчета графика и остатка влаги
+    val recentHistory by remember {
+        plantsViewModel.dailyHistory(System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000L)
+    }.collectAsState(initial = emptyList())
 
     var showAddDialog by remember { mutableStateOf(false) }
     // Храним id, а не объект, чтобы окно обновлялось после изменений в БД
@@ -67,7 +77,12 @@ fun PlantListScreen(
                 selectedMetric = selectedMetric,
                 onSelectMetric = { selectedMetric = it }
             )
-            PlantList(plants = plants, onPlantClick = { selectedPlantId = it.id })
+            PlantList(
+                plants = plants,
+                history = recentHistory,
+                onPlantClick = { selectedPlantId = it.id },
+                onWaterClick = { plantsViewModel.markWatered(it) }
+            )
         }
     } // Конец Scaffold
 
@@ -230,67 +245,139 @@ fun StatusSensorRow(
 }
 
 @Composable
-fun PlantList(plants: List<Plant>, onPlantClick: (Plant) -> Unit){
-
+fun PlantList(
+    plants: List<Plant>,
+    history: List<DailyCondition> = emptyList(),
+    onPlantClick: (Plant) -> Unit,
+    onWaterClick: (Plant) -> Unit
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = PaddingValues(16.dp)
     ) {
         items(plants, key = { it.id }) { plant ->
-            PlantCard(plant = plant, onClick = { onPlantClick(plant) })
+            val wateringStatus = remember(plant, history) {
+                WateringAdvisor.computeStatus(plant, history)
+            }
+            PlantCard(
+                plant = plant,
+                waterFraction = wateringStatus.waterFraction,
+                onClick = { onPlantClick(plant) },
+                onWaterClick = { onWaterClick(plant) }
+            )
         }
     }
 }
 
 @Composable
-fun PlantCard(plant: Plant, onClick: () -> Unit) {
+fun PlantCard(
+    plant: Plant,
+    waterFraction: Float = 0f,
+    onClick: () -> Unit,
+    onWaterClick: () -> Unit
+) {
     Card(
-        modifier = Modifier.fillMaxWidth().clickable{ onClick() },
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
         Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(14.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             val photo = remember(plant.imageUri) {
-                plant.imageUri?.let { BitmapFactory.decodeFile(it)?.asImageBitmap() }
+                decodeSampledBitmap(plant.imageUri)?.asImageBitmap()
             }
             if (photo != null) {
                 Image(
                     bitmap = photo,
-                    contentDescription = plant.name,
-                    modifier = Modifier.size(56.dp).clip(RoundedCornerShape(12.dp)),
+                    contentDescription = plant.nickname,
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(12.dp)),
                     contentScale = ContentScale.Crop
                 )
             } else {
                 Text(text = "🌱", fontSize = 32.sp)
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(14.dp))
 
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = plant.nickname.ifBlank { plant.name },
-                    fontSize = 20.sp,
+                    text = plant.nickname,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
-                if (plant.nickname.isNotBlank()) {
+                plant.scientificName?.takeIf { it.isNotBlank() }?.let { sci ->
                     Text(
-                        text = plant.name,
-                        fontSize = 14.sp,
+                        text = sci,
+                        fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "Статус: Подключено",
-                    fontSize = 14.sp,
+                    fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
+            }
+
+            Spacer(modifier = Modifier.width(6.dp))
+
+            // Кнопка полива с круговым индикатором остатка влаги вокруг (убывает по часовой стрелке)
+            val trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+            Box(
+                modifier = Modifier.size(50.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val strokeWidth = 3.dp.toPx()
+                    val halfStroke = strokeWidth / 2f
+                    val arcSize = Size(size.width - strokeWidth, size.height - strokeWidth)
+                    val topLeft = Offset(halfStroke, halfStroke)
+
+                    // Фоновый трек круга
+                    drawArc(
+                        color = trackColor,
+                        startAngle = 0f,
+                        sweepAngle = 360f,
+                        useCenter = false,
+                        topLeft = topLeft,
+                        size = arcSize,
+                        style = Stroke(width = strokeWidth)
+                    )
+
+                    // Индикатор остатка воды: высыхает/убывает по часовой стрелке от 12 часов
+                    if (waterFraction > 0f) {
+                        val startAngle = -90f + (1f - waterFraction) * 360f
+                        val sweepAngle = (waterFraction * 360f).coerceIn(0.1f, 360f)
+                        drawArc(
+                            color = Color(0xFF4FC3F7),
+                            startAngle = startAngle,
+                            sweepAngle = sweepAngle,
+                            useCenter = false,
+                            topLeft = topLeft,
+                            size = arcSize,
+                            style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                        )
+                    }
+                }
+
+                FilledTonalIconButton(
+                    onClick = onWaterClick,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Text("💧", fontSize = 18.sp)
+                }
             }
         }
     }

@@ -65,7 +65,7 @@ fun SensorHistoryChart(
             when (metric) {
                 SensorChartMetric.TEMPERATURE -> it.temperature
                 SensorChartMetric.HUMIDITY -> it.humidity
-                SensorChartMetric.LIGHT -> it.light
+                SensorChartMetric.LIGHT -> it.light.coerceIn(0f, 20000f)
             }
         }
     }

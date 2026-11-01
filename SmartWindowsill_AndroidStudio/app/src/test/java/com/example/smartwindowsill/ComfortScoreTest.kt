@@ -9,7 +9,7 @@ import org.junit.Test
 class ComfortScoreTest {
 
     private val plant = Plant(
-        name = "Test", imageUri = null,
+        nickname = "Test", imageUri = null,
         minTemp = 15f, optTemp = 22f, maxTemp = 30f,
         minHumidity = 40f, optHumidity = 60f, maxHumidity = 80f,
         minLight = 1000f, optLight = 5000f, maxLight = 9000f

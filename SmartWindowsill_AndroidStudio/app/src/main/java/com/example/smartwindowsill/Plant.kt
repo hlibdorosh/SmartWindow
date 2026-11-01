@@ -7,8 +7,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "plants")
 data class Plant(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val name: String,
-    @ColumnInfo(defaultValue = "") val nickname: String = "",
+    val nickname: String,
     val scientificName: String? = null,
     val imageUri: String?, // Путь к фотографии растения (файл в хранилище приложения)
 
@@ -30,5 +29,7 @@ data class Plant(
     // Когда растение добавлено (мс с эпохи)
     @ColumnInfo(defaultValue = "0") val addedAt: Long = System.currentTimeMillis(),
     // Когда последний раз поливали (мс с эпохи), null — ещё не поливали
-    val lastWatered: Long? = null
+    val lastWatered: Long? = null,
+    // Базовый рекомендуемый интервал полива в днях (от Claude), null — нет данных
+    val wateringIntervalDays: Int? = null
 )

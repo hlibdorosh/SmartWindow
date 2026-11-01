@@ -72,6 +72,28 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    // Последние значения ADC для медианного фильтра выбросов
+    private val adcWindow = ArrayDeque<Float>()
+    private var smoothedLux: Float? = null
+
+    /**
+     * ADC -> lux с фильтрацией. Возвращает null, если отсчёт недостоверен.
+     * Насыщение АЦП (>= 4090 или <= 5) означает, что LDR "закорочен"/не подключён,
+     * раньше после clamp это давало фиктивные ~204700 lx.
+     */
+    private fun filterLux(rawAdc: Float): Float? {
+        if (!rawAdc.isFinite() || rawAdc >= 4090f || rawAdc <= 5f) return null
+        adcWindow.addLast(rawAdc)
+        if (adcWindow.size > 5) adcWindow.removeFirst()
+        val adc = adcWindow.sorted()[adcWindow.size / 2] // медиана убирает одиночные выбросы
+        val rLdr = 10000f * (4095f - adc) / adc
+        val lux = (500000f / rLdr).coerceIn(0f, 20000f)
+        val prev = smoothedLux
+        val result = if (prev == null) lux else prev + 0.5f * (lux - prev) // лёгкое сглаживание без сильного лага
+        smoothedLux = result
+        return result
+    }
+
     private fun parseData(text: String) {
         try {
             val trimmed = text.trim()
@@ -86,10 +108,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     t?.let { _temp.value = "${it}°C" }
                     h?.let { _humidity.value = "${it}%" }
                     l?.let {
-                        val adc = it.coerceIn(1f, 4094f)
-                        val rLdr = 10000f * (4095f - adc) / adc
-                        val lux = 500000f / rLdr
-                        
+                        val lux = filterLux(it) ?: return@let
                         _light.value = "${lux.toInt()} lx"
                         if (t != null && h != null) recordSample(t, h, lux)
                     }
@@ -116,11 +135,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             lightRegex.find(trimmed)?.groups?.get(1)?.value?.let { number ->
-                val rawLight = number.toFloatOrNull() ?: 0f
-                val adc = rawLight.coerceIn(1f, 4094f)
-                val rLdr = 10000f * (4095f - adc) / adc
-                val lux = 500000f / rLdr
-                
+                val lux = filterLux(number.toFloatOrNull() ?: 0f) ?: return@let
                 _light.value = "${lux.toInt()} lx"
                 val t = parsedT
                 val h = parsedH

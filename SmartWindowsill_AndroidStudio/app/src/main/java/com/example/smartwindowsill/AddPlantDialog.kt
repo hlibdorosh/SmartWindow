@@ -1,33 +1,22 @@
 package com.example.smartwindowsill
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.graphics.BitmapFactory
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
-import java.io.File
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -43,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -53,6 +43,7 @@ fun AddPlantDialog(viewModel: PlantsViewModel, onDismiss: () -> Unit) {
 
     var name by rememberSaveable { mutableStateOf("") }
     var nickname by rememberSaveable { mutableStateOf("") }
+    var showLeaveConfirm by remember { mutableStateOf(false) }
 
     val photoSource = rememberPhotoSource { viewModel.onPhotoPicked(it) }
     val onCameraClick = photoSource.takePhoto
@@ -62,8 +53,42 @@ fun AddPlantDialog(viewModel: PlantsViewModel, onDismiss: () -> Unit) {
         onDismiss()
     }
 
+    val onAttemptLeave = {
+        if (photoPath != null || name.isNotBlank() || nickname.isNotBlank()) {
+            showLeaveConfirm = true
+        } else {
+            dismiss()
+        }
+    }
+
+    if (showLeaveConfirm) {
+        AlertDialog(
+            onDismissRequest = { showLeaveConfirm = false },
+            title = { Text("Выйти без сохранения?") },
+            text = { Text("Вы уверены, что хотите выйти? Введенные данные будут потеряны.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showLeaveConfirm = false
+                        dismiss()
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Выйти", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLeaveConfirm = false }) {
+                    Text("Остаться")
+                }
+            }
+        )
+    }
+
     AlertDialog(
-        onDismissRequest = { if (!isAdding) dismiss() },
+        onDismissRequest = { if (!isAdding) onAttemptLeave() },
         title = { Text("Новое растение") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -76,7 +101,7 @@ fun AddPlantDialog(viewModel: PlantsViewModel, onDismiss: () -> Unit) {
                     contentAlignment = Alignment.Center
                 ) {
                     val bitmap = remember(photoPath) {
-                        photoPath?.let { BitmapFactory.decodeFile(it)?.asImageBitmap() }
+                        decodeSampledBitmap(photoPath)?.asImageBitmap()
                     }
                     if (bitmap != null) {
                         Image(
@@ -108,8 +133,9 @@ fun AddPlantDialog(viewModel: PlantsViewModel, onDismiss: () -> Unit) {
 
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Название растения") },
+                    onValueChange = { name = it.replace("\n", "").replace("\r", "").replace("\t", "") },
+                    label = { Text("Название растения (для Claude)") },
+                    supportingText = { Text("Используется только для подбора условий ухода") },
                     singleLine = true,
                     enabled = !isAdding,
                     modifier = Modifier.fillMaxWidth()
@@ -117,8 +143,9 @@ fun AddPlantDialog(viewModel: PlantsViewModel, onDismiss: () -> Unit) {
 
                 OutlinedTextField(
                     value = nickname,
-                    onValueChange = { nickname = it },
-                    label = { Text("Никнейм") },
+                    onValueChange = { nickname = it.replace("\n", "").replace("\r", "").replace("\t", "") },
+                    label = { Text("Никнейм (необязательно)") },
+                    supportingText = { Text("Если пусто, будет использовано название") },
                     singleLine = true,
                     enabled = !isAdding,
                     modifier = Modifier.fillMaxWidth()
@@ -139,14 +166,14 @@ fun AddPlantDialog(viewModel: PlantsViewModel, onDismiss: () -> Unit) {
         },
         confirmButton = {
             TextButton(
-                enabled = !isAdding && photoPath != null && name.isNotBlank() && nickname.isNotBlank(),
+                enabled = !isAdding && photoPath != null && name.isNotBlank(),
                 onClick = { viewModel.addPlant(name, nickname, onAdded = onDismiss) }
             ) {
                 Text("Добавить")
             }
         },
         dismissButton = {
-            TextButton(enabled = !isAdding, onClick = dismiss) {
+            TextButton(enabled = !isAdding, onClick = onAttemptLeave) {
                 Text("Отмена")
             }
         }

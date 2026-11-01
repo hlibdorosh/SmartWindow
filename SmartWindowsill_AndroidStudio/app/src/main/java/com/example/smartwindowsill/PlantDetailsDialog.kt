@@ -1,6 +1,17 @@
 package com.example.smartwindowsill
 
 import androidx.compose.foundation.Image
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Eco
+import androidx.compose.material.icons.outlined.ShowChart
+import androidx.compose.material.icons.outlined.WaterDrop
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import com.example.smartwindowsill.ui.theme.NumberSmallStyle
+import com.example.smartwindowsill.ui.theme.appColors
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -86,7 +97,7 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                         showEditNickname = false
                     }
                 ) {
-                    Text("Сохранить", fontWeight = FontWeight.Bold)
+                    Text("Сохранить")
                 }
             },
             dismissButton = {
@@ -115,7 +126,7 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                         contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Text("Удалить", fontWeight = FontWeight.Bold)
+                    Text("Удалить")
                 }
             },
             dismissButton = {
@@ -140,17 +151,17 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(plant.nickname, fontWeight = FontWeight.Bold)
+                    Text(plant.nickname, style = MaterialTheme.typography.titleLarge)
                     plant.scientificName?.takeIf { it.isNotBlank() }?.let { sci ->
                         Text(
                             sci,
-                            fontSize = 13.sp,
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
                 IconButton(onClick = { showEditNickname = true }) {
-                    Text("✏️", fontSize = 18.sp)
+                    Icon(Icons.Outlined.Edit, contentDescription = "Изменить никнейм", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                 }
             }
         },
@@ -163,7 +174,7 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(220.dp)
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(12.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant),
                     contentAlignment = Alignment.Center
                 ) {
@@ -178,7 +189,7 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                             contentScale = ContentScale.Crop
                         )
                     } else {
-                        Text("🌱", fontSize = 64.sp)
+                        Icon(Icons.Outlined.Eco, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(48.dp))
                     }
                 }
 
@@ -197,16 +208,16 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                 // Карточка "Режим полива" с индикатором высыхания влаги
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = if (wateringStatus.isUrgent)
-                            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.45f)
+                            MaterialTheme.colorScheme.errorContainer
                         else
                             MaterialTheme.colorScheme.surfaceVariant
                     )
                 ) {
                     Column(
-                        modifier = Modifier.padding(14.dp),
+                        modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Row(
@@ -215,14 +226,12 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "💧 Режим полива",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp
+                                text = "Режим полива",
+                                style = MaterialTheme.typography.titleSmall
                             )
                             Text(
                                 text = wateringStatus.nextWateringText,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.bodySmall,
                                 color = if (wateringStatus.isUrgent)
                                     MaterialTheme.colorScheme.error
                                 else
@@ -239,9 +248,9 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(10.dp)
-                                    .clip(RoundedCornerShape(5.dp))
-                                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
+                                    .height(8.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(MaterialTheme.colorScheme.outlineVariant)
                             ) {
                                 if (wateringStatus.waterFraction > 0f) {
                                     Box(
@@ -249,15 +258,14 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                                             .fillMaxHeight()
                                             .fillMaxWidth(fraction = wateringStatus.waterFraction)
                                             .align(Alignment.CenterStart)
-                                            .clip(RoundedCornerShape(5.dp))
-                                            .background(Color(0xFF4FC3F7))
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(MaterialTheme.appColors.water)
                                     )
                                 }
                             }
                             Text(
                                 text = "${wateringStatus.waterPercent}%",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
+                                style = NumberSmallStyle,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         }
@@ -267,12 +275,12 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Column {
-                                Text("Частота", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text("раз в ${wateringStatus.intervalDays} дн.", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                Text("Частота", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("раз в ${wateringStatus.intervalDays} дн.", style = MaterialTheme.typography.labelLarge)
                             }
                             Column(horizontalAlignment = Alignment.End) {
-                                Text("Последний полив", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text(wateringStatus.lastWateredText, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                Text("Последний полив", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(wateringStatus.lastWateredText, style = MaterialTheme.typography.labelLarge)
                             }
                         }
 
@@ -280,7 +288,9 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                             onClick = { viewModel.markWatered(plant) },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("💧 Отметить полив")
+                            Icon(Icons.Outlined.WaterDrop, contentDescription = null, modifier = Modifier.size(18.dp))
+Spacer(modifier = Modifier.width(8.dp))
+Text("Отметить полив")
                         }
                     }
                 }
@@ -299,7 +309,9 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                     onClick = { showComfort = true },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("📈 История комфорта")
+                    Icon(Icons.Outlined.ShowChart, contentDescription = null, modifier = Modifier.size(18.dp))
+Spacer(modifier = Modifier.width(8.dp))
+Text("История комфорта")
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -311,7 +323,9 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                         contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Text("🗑️ Удалить растение")
+                    Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+Spacer(modifier = Modifier.width(8.dp))
+Text("Удалить растение")
                 }
 
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
@@ -326,8 +340,8 @@ fun PlantDetailsDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
 @Composable
 private fun InfoRow(label: String, value: String) {
     Column {
-        Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, fontSize = 16.sp)
+        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.bodyLarge)
     }
 }
 

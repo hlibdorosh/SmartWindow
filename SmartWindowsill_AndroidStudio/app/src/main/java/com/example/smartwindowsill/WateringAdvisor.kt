@@ -66,9 +66,9 @@ object WateringAdvisor {
         }
 
         val nextWateringFormatted = when {
-            daysSince == null -> "⚠️ пора полить"
-            daysUntil != null && daysUntil < 0 -> "⚠️ Пора полить! (просрочено на ${-daysUntil} дн.)"
-            daysUntil == 0 -> "⚠️ Пора полить сегодня!"
+            daysSince == null -> "пора полить"
+            daysUntil != null && daysUntil < 0 -> "пора полить, просрочено на ${-daysUntil} дн."
+            daysUntil == 0 -> "пора полить сегодня"
             daysUntil == 1 -> "завтра"
             else -> "через ~$daysUntil дн."
         }

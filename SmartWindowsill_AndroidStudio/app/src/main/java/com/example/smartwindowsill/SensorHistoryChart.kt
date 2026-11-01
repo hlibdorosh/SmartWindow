@@ -6,32 +6,35 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material.icons.outlined.Thermostat
+import androidx.compose.material.icons.outlined.WaterDrop
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.smartwindowsill.ui.theme.NumberSmallStyle
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
 
-enum class SensorChartMetric(val label: String, val unit: String, val icon: String, val color: Color) {
-    TEMPERATURE("Температура", "°C", "🌡️", Color(0xFFFF7043)),
-    HUMIDITY("Влажность", "%", "💧", Color(0xFF42A5F5)),
-    LIGHT("Свет", "lx", "☀️", Color(0xFFFFB300))
+enum class SensorChartMetric(val label: String, val unit: String, val icon: ImageVector) {
+    TEMPERATURE("Температура", "°C", Icons.Outlined.Thermostat),
+    HUMIDITY("Влажность", "%", Icons.Outlined.WaterDrop),
+    LIGHT("Свет", "lx", Icons.Outlined.LightMode)
 }
 
 @Composable
@@ -45,15 +48,15 @@ fun SensorHistoryChart(
             modifier = modifier
                 .fillMaxWidth()
                 .background(
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    MaterialTheme.colorScheme.surfaceVariant,
                     RoundedCornerShape(12.dp)
                 )
-                .padding(14.dp),
+                .padding(16.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "📊 Накапливаем данные датчика... Появятся в течение минуты",
-                fontSize = 12.sp,
+                text = "Накапливаем данные датчика, появятся в течение минуты",
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -72,8 +75,10 @@ fun SensorHistoryChart(
 
     val measurer = rememberTextMeasurer()
     val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
-    val labelStyle = TextStyle(fontSize = 10.sp, color = labelColor)
+    val labelStyle = TextStyle(fontSize = 12.sp, color = labelColor, fontFeatureSettings = "tnum")
     val timeFormat = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
+    val accent = MaterialTheme.colorScheme.primary
+    val surfaceColor = MaterialTheme.colorScheme.surfaceVariant
 
     var selectedIndex by remember(history, metric) { mutableStateOf<Int?>(null) }
     val activeIndex = selectedIndex?.coerceIn(0, history.size - 1) ?: (history.size - 1)
@@ -84,58 +89,56 @@ fun SensorHistoryChart(
         modifier = modifier
             .fillMaxWidth()
             .background(
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                MaterialTheme.colorScheme.surfaceVariant,
                 RoundedCornerShape(12.dp)
             )
-            .padding(horizontal = 10.dp, vertical = 8.dp)
+            .padding(12.dp)
     ) {
         // Подсказка/значение в выбранной точке
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "${metric.icon} Динамика (60 мин): ${metric.label}",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
+                text = "${metric.label}, 60 мин",
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             if (activeHistory != null && activeVal != null) {
                 Text(
-                    text = "${timeFormat.format(Date(activeHistory.timestamp))} → ${formatValue(activeVal)} ${metric.unit}",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = metric.color
+                    text = "${timeFormat.format(Date(activeHistory.timestamp))} · ${formatValue(activeVal)} ${metric.unit}",
+                    style = NumberSmallStyle,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(110.dp)
+                .height(112.dp)
                 .pointerInput(history, metric) {
-                    val left = 38.dp.toPx()
+                    val left = 40.dp.toPx()
                     val right = size.width - 8.dp.toPx()
                     detectTapGestures { offset ->
                         selectedIndex = nearestIndex(offset.x, left, right, history.size)
                     }
                 }
                 .pointerInput(history, metric) {
-                    val left = 38.dp.toPx()
+                    val left = 40.dp.toPx()
                     val right = size.width - 8.dp.toPx()
                     detectHorizontalDragGestures { change, _ ->
                         selectedIndex = nearestIndex(change.position.x, left, right, history.size)
                     }
                 }
         ) {
-            val left = 38.dp.toPx()
+            val left = 40.dp.toPx()
             val right = size.width - 8.dp.toPx()
             val top = 8.dp.toPx()
-            val bottom = size.height - 18.dp.toPx()
+            val bottom = size.height - 20.dp.toPx()
             val n = values.size
 
             val minRaw = values.minOrNull() ?: 0f
@@ -153,13 +156,13 @@ fun SensorHistoryChart(
             for (v in ySteps) {
                 val y = yOf(v)
                 drawLine(
-                    color = labelColor.copy(alpha = 0.12f),
+                    color = labelColor.copy(alpha = 0.16f),
                     start = Offset(left, y),
                     end = Offset(right, y),
                     strokeWidth = 1.dp.toPx()
                 )
                 val layout = measurer.measure(formatValue(v), labelStyle)
-                drawText(layout, topLeft = Offset(left - layout.size.width - 4.dp.toPx(), y - layout.size.height / 2f))
+                drawText(layout, topLeft = Offset(left - layout.size.width - 8.dp.toPx(), y - layout.size.height / 2f))
             }
 
             // Подписи по оси X (до 4 отметок времени)
@@ -174,7 +177,7 @@ fun SensorHistoryChart(
             }
 
             if (n >= 2) {
-                // Построение линии и градиентной заливки
+                // Построение линии и плоской заливки
                 val linePath = Path()
                 val fillPath = Path()
 
@@ -192,33 +195,26 @@ fun SensorHistoryChart(
                 fillPath.lineTo(xOf(n - 1), bottom)
                 fillPath.close()
 
-                // Заливка под графиком
-                drawPath(
-                    path = fillPath,
-                    brush = Brush.verticalGradient(
-                        colors = listOf(metric.color.copy(alpha = 0.30f), metric.color.copy(alpha = 0.02f)),
-                        startY = top,
-                        endY = bottom
-                    )
-                )
+                // Заливка под графиком: один тон, без градиента
+                drawPath(path = fillPath, color = accent.copy(alpha = 0.10f))
 
                 // Линия графика
                 drawPath(
                     path = linePath,
-                    color = metric.color,
-                    style = Stroke(width = 2.5.dp.toPx())
+                    color = accent,
+                    style = Stroke(width = 2.dp.toPx())
                 )
 
                 // Маркер активной точки
                 val sel = activeIndex.coerceIn(0, n - 1)
                 val selX = xOf(sel)
                 val selY = yOf(values[sel])
-                drawCircle(color = metric.color, radius = 5.dp.toPx(), center = Offset(selX, selY))
-                drawCircle(color = Color.White, radius = 2.dp.toPx(), center = Offset(selX, selY))
+                drawCircle(color = accent, radius = 5.dp.toPx(), center = Offset(selX, selY))
+                drawCircle(color = surfaceColor, radius = 2.dp.toPx(), center = Offset(selX, selY))
             } else if (n == 1) {
                 val cx = (left + right) / 2f
                 val cy = yOf(values[0])
-                drawCircle(color = metric.color, radius = 5.dp.toPx(), center = Offset(cx, cy))
+                drawCircle(color = accent, radius = 5.dp.toPx(), center = Offset(cx, cy))
             }
         }
     }

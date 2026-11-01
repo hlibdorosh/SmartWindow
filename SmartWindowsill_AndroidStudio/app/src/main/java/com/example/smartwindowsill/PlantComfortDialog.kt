@@ -28,6 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.smartwindowsill.ui.theme.NumberStyle
+import com.example.smartwindowsill.ui.theme.appColors
 import androidx.compose.ui.window.DialogProperties
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -61,14 +63,14 @@ fun PlantComfortDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(20.dp),
             color = MaterialTheme.colorScheme.surface
         ) {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState()).padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("Комфорт: ${plant.nickname}", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Комфорт: ${plant.nickname}", style = MaterialTheme.typography.titleLarge)
 
                 // Период
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -112,7 +114,7 @@ fun PlantComfortDialog(plant: Plant, viewModel: PlantsViewModel, onDismiss: () -
                     )
                     Text(
                         "Линия — индекс по средним за день, полоса — диапазон внутри дня. Коснитесь графика, чтобы увидеть детали.",
-                        fontSize = 11.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     selectedPoint?.let { ComfortBreakdown(it, byDay[it.day]) }
@@ -132,29 +134,29 @@ private fun ComfortBreakdown(point: ComfortPoint, daily: DailyCondition?) {
     val dateText = remember(point.day) {
         SimpleDateFormat("d MMMM yyyy", Locale.getDefault()).format(Date(point.day))
     }
-    Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
-        Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(dateText, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(dateText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(
                 "Индекс комфорта: ${point.index.toInt()}%",
-                fontSize = 18.sp, fontWeight = FontWeight.Bold, color = comfortColor(point.index)
+                style = NumberStyle.copy(fontSize = 20.sp, lineHeight = 28.sp), color = comfortColor(point.index)
             )
             Text(
                 "Внутри дня: ${point.low.toInt()}–${point.high.toInt()}%" +
                     (daily?.let { " · замеров: ${it.sampleCount}" } ?: ""),
-                fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             point.parts.forEach { part ->
                 val diff = part.value - part.ideal.opt
                 val where = when {
-                    part.score >= 0.95f -> "в норме ✓"
+                    part.score >= 0.95f -> "в норме"
                     diff > 0 -> "выше идеала на ${fmt(diff)} ${part.metric.unit}"
                     else -> "ниже идеала на ${fmt(-diff)} ${part.metric.unit}"
                 }
                 Column {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(part.metric.label, fontWeight = FontWeight.SemiBold)
+                        Text(part.metric.label, style = MaterialTheme.typography.titleSmall)
                         Text(
                             if (part.lossPoints >= 0.5f) "−${part.lossPoints.toInt()} п.п." else "0",
                             color = if (part.lossPoints >= 0.5f) comfortColor(part.score * 100f)
@@ -164,7 +166,7 @@ private fun ComfortBreakdown(point: ComfortPoint, daily: DailyCondition?) {
                     Text(
                         "${fmt(part.value)} ${part.metric.unit} (идеал ${fmt(part.ideal.opt)}, " +
                             "допустимо ${fmt(part.ideal.min)}–${fmt(part.ideal.max)}) — $where",
-                        fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -173,17 +175,18 @@ private fun ComfortBreakdown(point: ComfortPoint, daily: DailyCondition?) {
             if (worst != null && worst.lossPoints >= 0.5f) {
                 Text(
                     "Что улучшить в первую очередь: ${worst.metric.label.lowercase()}.",
-                    fontSize = 13.sp, fontWeight = FontWeight.Medium
+                    style = MaterialTheme.typography.labelLarge
                 )
             }
         }
     }
 }
 
+@Composable
 private fun comfortColor(percent: Float): Color = when {
-    percent >= 70f -> Color(0xFF2ECC71)
-    percent >= 40f -> Color(0xFFF39C12)
-    else -> Color(0xFFE74C3C)
+    percent >= 70f -> MaterialTheme.appColors.comfortGood
+    percent >= 40f -> MaterialTheme.appColors.comfortWarn
+    else -> MaterialTheme.appColors.comfortBad
 }
 
 private fun fmt(v: Float): String = if (v % 1f == 0f) v.toInt().toString() else "%.1f".format(v)

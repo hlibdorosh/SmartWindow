@@ -1,12 +1,20 @@
 package com.example.smartwindowsill
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Eco
+import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material.icons.outlined.Thermostat
+import androidx.compose.material.icons.outlined.WaterDrop
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -19,15 +27,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.example.smartwindowsill.ui.theme.NumberStyle
+import com.example.smartwindowsill.ui.theme.appColors
 
 @Composable
 fun PlantListScreen(
@@ -58,9 +67,11 @@ fun PlantListScreen(
         modifier = Modifier.fillMaxSize(),
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showAddDialog = true }
+                onClick = { showAddDialog = true },
+                shape = RoundedCornerShape(16.dp),
+                elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp)
             ) {
-                Text("+")
+                Icon(Icons.Outlined.Add, contentDescription = "Добавить растение", modifier = Modifier.size(24.dp))
             }
         }
     ) { innerPadding ->
@@ -110,78 +121,69 @@ fun Header(
     light: String,
     history60Min: List<SensorHistory>,
     selectedMetric: SensorChartMetric,
-    onSelectMetric: (SensorChartMetric) -> Unit,
-    raw: String = ""
+    onSelectMetric: (SensorChartMetric) -> Unit
 ) {
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shadowElevation = 8.dp,
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        color = MaterialTheme.colorScheme.surface,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Smart Windowsill",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
-            // Значения сенсоров идут друг за другом.
-            // Клик по любому сенсору переключает график внизу на этот параметр!
+        Column {
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
             ) {
-                StatusSensorRow(
-                    label = "Температура",
-                    value = temp,
-                    icon = "🌡️",
-                    isSelected = selectedMetric == SensorChartMetric.TEMPERATURE,
-                    onClick = { onSelectMetric(SensorChartMetric.TEMPERATURE) }
+                Text(
+                    text = "Smart Windowsill",
+                    style = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
-                StatusSensorRow(
-                    label = "Влажность воздуха",
-                    value = humidity,
-                    icon = "💧",
-                    isSelected = selectedMetric == SensorChartMetric.HUMIDITY,
-                    onClick = { onSelectMetric(SensorChartMetric.HUMIDITY) }
-                )
-                StatusSensorRow(
-                    label = "Освещенность",
-                    value = light,
-                    icon = "☀️",
-                    isSelected = selectedMetric == SensorChartMetric.LIGHT,
-                    onClick = { onSelectMetric(SensorChartMetric.LIGHT) }
+
+                // Значения сенсоров одной группой.
+                // Клик по любому сенсору переключает график внизу на этот параметр
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                ) {
+                    Column {
+                        StatusSensorRow(
+                            label = "Температура",
+                            value = temp,
+                            icon = SensorChartMetric.TEMPERATURE.icon,
+                            isSelected = selectedMetric == SensorChartMetric.TEMPERATURE,
+                            onClick = { onSelectMetric(SensorChartMetric.TEMPERATURE) }
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        StatusSensorRow(
+                            label = "Влажность воздуха",
+                            value = humidity,
+                            icon = SensorChartMetric.HUMIDITY.icon,
+                            isSelected = selectedMetric == SensorChartMetric.HUMIDITY,
+                            onClick = { onSelectMetric(SensorChartMetric.HUMIDITY) }
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        StatusSensorRow(
+                            label = "Освещенность",
+                            value = light,
+                            icon = SensorChartMetric.LIGHT.icon,
+                            isSelected = selectedMetric == SensorChartMetric.LIGHT,
+                            onClick = { onSelectMetric(SensorChartMetric.LIGHT) }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Динамический график за последние 60 минут
+                SensorHistoryChart(
+                    history = history60Min,
+                    metric = selectedMetric
                 )
             }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Простой динамический график за последние 60 минут
-            SensorHistoryChart(
-                history = history60Min,
-                metric = selectedMetric
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = "",
-                onValueChange = {},
-                label = { Text("Поиск") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            // Отладочный вывод: последний полученный сырой буфер (короткая версия)
-            if (raw.isNotBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(text = "RAW: ${raw.replace("\n", " ").take(200)}", fontSize = 12.sp)
-            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         }
     }
 }
@@ -190,57 +192,40 @@ fun Header(
 fun StatusSensorRow(
     label: String,
     value: String,
-    icon: String,
+    icon: ImageVector,
     isSelected: Boolean = false,
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    Card(
+    val tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected)
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-            else
-                MaterialTheme.colorScheme.surfaceVariant
-        )
+            .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)
+            .clickable { onClick() }
+            .heightIn(min = 44.dp)
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Text(text = icon, fontSize = 20.sp)
-                Text(
-                    text = label,
-                    fontSize = 15.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Box(modifier = Modifier.width(24.dp), contentAlignment = Alignment.Center) {
+                Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
             }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = value,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                if (isSelected) {
-                    Text("📈", fontSize = 14.sp)
-                }
-            }
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
+        Text(
+            text = value,
+            style = NumberStyle,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 
@@ -254,7 +239,7 @@ fun PlantList(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(16.dp)
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 88.dp)
     ) {
         items(plants, key = { it.id }) { plant ->
             val wateringStatus = remember(plant, history) {
@@ -263,6 +248,8 @@ fun PlantList(
             PlantCard(
                 plant = plant,
                 waterFraction = wateringStatus.waterFraction,
+                wateringText = wateringStatus.nextWateringText,
+                isUrgent = wateringStatus.isUrgent,
                 onClick = { onPlantClick(plant) },
                 onWaterClick = { onWaterClick(plant) }
             )
@@ -274,6 +261,8 @@ fun PlantList(
 fun PlantCard(
     plant: Plant,
     waterFraction: Float = 0f,
+    wateringText: String = "",
+    isUrgent: Boolean = false,
     onClick: () -> Unit,
     onWaterClick: () -> Unit
 ) {
@@ -283,12 +272,13 @@ fun PlantCard(
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(
             modifier = Modifier
-                .padding(14.dp)
+                .padding(12.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -301,46 +291,65 @@ fun PlantCard(
                     contentDescription = plant.nickname,
                     modifier = Modifier
                         .size(56.dp)
-                        .clip(RoundedCornerShape(12.dp)),
+                        .clip(RoundedCornerShape(8.dp)),
                     contentScale = ContentScale.Crop
                 )
             } else {
-                Text(text = "🌱", fontSize = 32.sp)
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Outlined.Eco,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = plant.nickname,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 plant.scientificName?.takeIf { it.isNotBlank() }?.let { sci ->
                     Text(
                         text = sci,
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Статус: Подключено",
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
+                if (wateringText.isNotBlank()) {
+                    Text(
+                        text = "Полив: $wateringText",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (isUrgent) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.width(6.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
             // Кнопка полива с круговым индикатором остатка влаги вокруг (убывает по часовой стрелке)
-            val trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+            val trackColor = MaterialTheme.colorScheme.outlineVariant
+            val waterColor = MaterialTheme.appColors.water
             Box(
-                modifier = Modifier.size(50.dp),
+                modifier = Modifier.size(48.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
-                    val strokeWidth = 3.dp.toPx()
+                    val strokeWidth = 2.dp.toPx()
                     val halfStroke = strokeWidth / 2f
                     val arcSize = Size(size.width - strokeWidth, size.height - strokeWidth)
                     val topLeft = Offset(halfStroke, halfStroke)
@@ -361,7 +370,7 @@ fun PlantCard(
                         val startAngle = -90f + (1f - waterFraction) * 360f
                         val sweepAngle = (waterFraction * 360f).coerceIn(0.1f, 360f)
                         drawArc(
-                            color = Color(0xFF4FC3F7),
+                            color = waterColor,
                             startAngle = startAngle,
                             sweepAngle = sweepAngle,
                             useCenter = false,
@@ -372,11 +381,16 @@ fun PlantCard(
                     }
                 }
 
-                FilledTonalIconButton(
+                IconButton(
                     onClick = onWaterClick,
                     modifier = Modifier.size(40.dp)
                 ) {
-                    Text("💧", fontSize = 18.sp)
+                    Icon(
+                        Icons.Outlined.WaterDrop,
+                        contentDescription = "Отметить полив",
+                        tint = waterColor,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
         }

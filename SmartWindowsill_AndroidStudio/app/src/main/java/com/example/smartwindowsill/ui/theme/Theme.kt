@@ -1,58 +1,105 @@
 package com.example.smartwindowsill.ui.theme
 
-import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = MossOnDark,
+    onPrimary = Color(0xFF12211A),
+    primaryContainer = MossContainerDark,
+    onPrimaryContainer = Chalk,
+    secondary = ChalkSecondary,
+    onSecondary = Soil,
+    secondaryContainer = SoilSunken,
+    onSecondaryContainer = Chalk,
+    tertiary = ChalkSecondary,
+    background = Soil,
+    onBackground = Chalk,
+    surface = SoilRaised,
+    onSurface = Chalk,
+    surfaceVariant = SoilSunken,
+    onSurfaceVariant = ChalkSecondary,
+    surfaceContainerLowest = Soil,
+    surfaceContainerLow = SoilRaised,
+    surfaceContainer = SoilRaised,
+    surfaceContainerHigh = SoilSunken,
+    surfaceContainerHighest = SoilSunken,
+    outline = ChalkMuted,
+    outlineVariant = HairlineDark,
+    error = ClayErrorDark,
+    onError = Soil,
+    errorContainer = ClayErrorContainerDark,
+    onErrorContainer = Chalk
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
+    primary = Moss,
     onPrimary = Color.White,
+    primaryContainer = MossContainerLight,
+    onPrimaryContainer = Ink,
+    secondary = InkSecondary,
     onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    secondaryContainer = PaperSunken,
+    onSecondaryContainer = Ink,
+    tertiary = InkSecondary,
+    background = Paper,
+    onBackground = Ink,
+    surface = PaperRaised,
+    onSurface = Ink,
+    surfaceVariant = PaperSunken,
+    onSurfaceVariant = InkSecondary,
+    surfaceContainerLowest = PaperRaised,
+    surfaceContainerLow = PaperRaised,
+    surfaceContainer = PaperRaised,
+    surfaceContainerHigh = PaperSunken,
+    surfaceContainerHighest = PaperSunken,
+    outline = InkMuted,
+    outlineVariant = HairlineLight,
+    error = ClayError,
+    onError = Color.White,
+    errorContainer = ClayErrorContainerLight,
+    onErrorContainer = Ink
 )
+
+/** Colors that are not part of Material's scheme. */
+@Immutable
+data class AppColors(
+    val water: Color,
+    val comfortGood: Color,
+    val comfortWarn: Color,
+    val comfortBad: Color
+)
+
+val LocalAppColors = staticCompositionLocalOf {
+    AppColors(WaterBlue, ComfortGood, ComfortWarn, ComfortBad)
+}
+
+val MaterialTheme.appColors: AppColors
+    @Composable get() = LocalAppColors.current
 
 @Composable
 fun SmartWindowsillTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val appColors = if (darkTheme) {
+        AppColors(WaterBlueOnDark, MossOnDark, Color(0xFFD9A441), ClayErrorDark)
+    } else {
+        AppColors(WaterBlue, ComfortGood, ComfortWarn, ComfortBad)
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    androidx.compose.runtime.CompositionLocalProvider(LocalAppColors provides appColors) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }

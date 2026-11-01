@@ -76,7 +76,7 @@ fun AddPlantDialog(viewModel: PlantsViewModel, onDismiss: () -> Unit) {
                         contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Text("Выйти", fontWeight = FontWeight.Bold)
+                    Text("Выйти")
                 }
             },
             dismissButton = {

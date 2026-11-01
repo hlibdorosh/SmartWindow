@@ -44,9 +44,9 @@ fun ComfortChart(
 ) {
     val measurer = rememberTextMeasurer()
     val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
-    val lineColor = Color(0xFF2ECC71)
+    val lineColor = MaterialTheme.colorScheme.primary
     val dateFormat = remember(Unit) { SimpleDateFormat("dd.MM", Locale.getDefault()) }
-    val labelStyle = TextStyle(fontSize = 10.sp, color = labelColor)
+    val labelStyle = TextStyle(fontSize = 12.sp, color = labelColor, fontFeatureSettings = "tnum")
     val markerColor = MaterialTheme.colorScheme.onSurface
 
     fun nearestWithData(x: Float, left: Float, right: Float): Int? {
@@ -112,7 +112,7 @@ fun ComfortChart(
             idxWithData.asReversed().forEach { i -> lineTo(xOf(i), yOf(points[i]!!.low)) }
             close()
         }
-        drawPath(band, lineColor.copy(alpha = 0.14f))
+        drawPath(band, lineColor.copy(alpha = 0.16f))
 
         // Заливка под линией
         val firstX = xOf(idxWithData.first())
@@ -126,7 +126,7 @@ fun ComfortChart(
             lineTo(firstX, bottom)
             close()
         }
-        drawPath(area, Brush.verticalGradient(listOf(lineColor.copy(alpha = 0.35f), lineColor.copy(alpha = 0f)), top, bottom))
+        drawPath(area, lineColor.copy(alpha = 0.10f))
 
         // Линия индекса
         val line = Path().apply {

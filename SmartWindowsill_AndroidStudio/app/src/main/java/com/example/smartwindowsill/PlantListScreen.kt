@@ -135,7 +135,7 @@ fun Header(
                     .padding(16.dp)
             ) {
                 Text(
-                    text = "Smart Windowsill",
+                    text = "SillSence",
                     style = MaterialTheme.typography.headlineMedium,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )

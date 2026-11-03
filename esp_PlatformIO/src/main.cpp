@@ -89,8 +89,6 @@ void setup() {
 }
 
 void loop() {
-  delay(1000);
-
   float humidity = dht.readHumidity();
   float temperature = dht.readTemperature();
   float light = readLight();
@@ -105,4 +103,5 @@ void loop() {
     pCharacteristic->setValue(payload.c_str());
     pCharacteristic->notify();
   }
+  delay(5000);
 }

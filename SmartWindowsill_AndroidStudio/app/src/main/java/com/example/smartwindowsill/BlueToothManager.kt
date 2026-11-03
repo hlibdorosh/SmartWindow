@@ -90,7 +90,12 @@ class BluetoothManager(private val context: Context) {
             synchronized(incomingBuffer) {
                 incomingBuffer.append(s)
                 handler.removeCallbacks(emitRunnable)
-                handler.postDelayed(emitRunnable, EMIT_TIMEOUT_MS)
+                // Если пришёл полный пакет (перевод строки или 3 CSV-поля), отдаём сразу без задержки 400 мс
+                if (incomingBuffer.contains("\n") || incomingBuffer.count { it == ',' } >= 2) {
+                    flushBufferOnTimeout()
+                } else {
+                    handler.postDelayed(emitRunnable, EMIT_TIMEOUT_MS)
+                }
             }
         }
     }

@@ -32,7 +32,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val db = (application as App).database
     private val conditionRepository = ConditionRepository(db)
     private var lastRecordedAt = 0L
-    private val RECORD_INTERVAL_MS = 15_000L // Запись каждые 15 сек для динамичного и плавного графика
+    private val RECORD_INTERVAL_MS = 60_000L // Запись раз в минуту для графика
 
     // История за последние 60 минут (хронологически по возрастанию времени)
     val history60Min: StateFlow<List<SensorHistory>> = db
@@ -72,26 +72,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Последние значения ADC для медианного фильтра выбросов
-    private val adcWindow = ArrayDeque<Float>()
-    private var smoothedLux: Float? = null
-
     /**
-     * ADC -> lux с фильтрацией. Возвращает null, если отсчёт недостоверен.
-     * Насыщение АЦП (>= 4090 или <= 5) означает, что LDR "закорочен"/не подключён,
-     * раньше после clamp это давало фиктивные ~204700 lx.
+     * ADC -> lux. Возвращает null, если отсчёт недостоверен.
+     * Насыщение АЦП (>= 4090 или <= 5) означает, что LDR "закорочен"/не подключён.
+     * На ESP32 уже выполняется аппаратная 15-точечная медиана, поэтому считаем lux
+     * сразу без буферизации, исключая задержку при обновлении освещенности.
      */
-    private fun filterLux(rawAdc: Float): Float? {
-        if (!rawAdc.isFinite() || rawAdc >= 4090f || rawAdc <= 5f) return null
-        adcWindow.addLast(rawAdc)
-        if (adcWindow.size > 5) adcWindow.removeFirst()
-        val adc = adcWindow.sorted()[adcWindow.size / 2] // медиана убирает одиночные выбросы
-        val rLdr = 10000f * (4095f - adc) / adc
-        val lux = (500000f / rLdr).coerceIn(0f, 20000f)
-        val prev = smoothedLux
-        val result = if (prev == null) lux else prev + 0.5f * (lux - prev) // лёгкое сглаживание без сильного лага
-        smoothedLux = result
-        return result
+    private fun filterLux(rawLight: Float): Float? {
+        if (!rawLight.isFinite() || rawLight < 0f) return null
+        return rawLight.coerceIn(0f, 20000f)
     }
 
     private fun parseData(text: String) {

@@ -37,6 +37,7 @@ class App : Application() {
                 db.execSQL("UPDATE sensor_history SET light = 15000 WHERE light > 20000")
                 db.execSQL("UPDATE daily_condition_history SET lightMax = 15000 WHERE lightMax > 20000")
                 db.execSQL("UPDATE daily_condition_history SET lightMean = 15000 WHERE lightMean > 20000")
+                DataSeeder.seedIfEmpty(database)
             } catch (_: Exception) {}
         }
     }

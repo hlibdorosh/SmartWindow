@@ -4,6 +4,18 @@ An intelligent plant microclimate monitoring system powered by an **ESP32** hard
 
 ---
 
+## 📱 Application Interface
+
+Native Android application screens and monitoring interface:
+
+<p align="center">
+  <img src="screenshot1.jpg" width="32%" alt="App Screenshot 1" />
+  <img src="screenshot2.jpg" width="32%" alt="App Screenshot 2" />
+  <img src="screenshot3.jpg" width="32%" alt="App Screenshot 3" />
+</p>
+
+---
+
 ## 📸 Device & Wiring Diagram
 
 ### Hardware Setup
